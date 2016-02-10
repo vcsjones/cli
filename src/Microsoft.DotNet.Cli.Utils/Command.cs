@@ -31,7 +31,7 @@ namespace Microsoft.DotNet.Cli.Utils
 
             _stdOut = new StreamForwarder();
             _stdErr = new StreamForwarder();
-        
+
             _process = new Process
             {
                 StartInfo = psi
@@ -46,7 +46,7 @@ namespace Microsoft.DotNet.Cli.Utils
         }
 
         /// <summary>
-        /// Create a command with the specified arg array. Args will be 
+        /// Create a command with the specified arg array. Args will be
         /// escaped properly to ensure that exactly the strings in this
         /// array will be present in the corresponding argument array
         /// in the command's process.
@@ -68,7 +68,7 @@ namespace Microsoft.DotNet.Cli.Utils
 
             return command;
         }
-        
+
         public CommandResult Execute()
         {
 

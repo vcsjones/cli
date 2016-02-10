@@ -28,7 +28,7 @@ namespace Microsoft.DotNet.Tests.ArgumentForwarding
         {
             Console.WriteLine("Dummy Entrypoint.");
         }
-       
+
         public ArgumentForwardingTests()
         {
             // This test has a dependency on an argument reflector
@@ -58,7 +58,6 @@ namespace Microsoft.DotNet.Tests.ArgumentForwarding
         [InlineData(@"a\\""b c d")]
         [InlineData(@"a\\\""b c d")]
         [InlineData(@"a\\\\""b c d")]
-        [InlineData(@"a\\\\""b c d")]
         [InlineData(@"a\\\\""b c"" d e")]
         [InlineData(@"a""b c""d e""f g""h i""j k""l")]
         [InlineData(@"a b c""def")]
@@ -66,11 +65,14 @@ namespace Microsoft.DotNet.Tests.ArgumentForwarding
         [InlineData(@"a\""b \\ cd ""\e f\"" \\""\\\")]
         public void TestArgumentForwarding(string testUserArgument)
         {
+            //Console.WriteLine("Press a key");
+            //Console.ReadLine();
+
             // Get Baseline Argument Evaluation via Reflector
             var rawEvaluatedArgument = RawEvaluateArgumentString(testUserArgument);
 
             // Escape and Re-Evaluate the rawEvaluatedArgument
-            var escapedEvaluatedRawArgument = EscapeAndEvaluateArgumentString(rawEvaluatedArgument);
+            var escapedEvaluatedRawArgument = EscapeAndEvaluateArgumentString(rawEvaluatedArgument, useComSpec: false);
 
             rawEvaluatedArgument.Length.Should().Be(escapedEvaluatedRawArgument.Length);
 
@@ -98,7 +100,6 @@ namespace Microsoft.DotNet.Tests.ArgumentForwarding
         [InlineData(@"a\\""b c d")]
         [InlineData(@"a\\\""b c d")]
         [InlineData(@"a\\\\""b c d")]
-        [InlineData(@"a\\\\""b c d")]
         [InlineData(@"a\\\\""b c"" d e")]
         [InlineData(@"a""b c""d e""f g""h i""j k""l")]
         [InlineData(@"a b c""def")]
@@ -110,6 +111,9 @@ namespace Microsoft.DotNet.Tests.ArgumentForwarding
             {
                 return;
             }
+
+            //Console.WriteLine("Press a key");
+            //Console.ReadLine();
 
             // Get Baseline Argument Evaluation via Reflector
             // This does not need to be different for cmd because
@@ -139,7 +143,7 @@ namespace Microsoft.DotNet.Tests.ArgumentForwarding
             {
                 var rawArg = rawEvaluatedArgument[i];
                 var escapedArg = escapedEvaluatedRawArgument[i];
-                
+
                 try
                 {
                     rawArg.Should().Be(escapedArg);
@@ -154,16 +158,59 @@ namespace Microsoft.DotNet.Tests.ArgumentForwarding
         }
 
         /// <summary>
+        /// Tests argument forwarding in Command.Create to an executable via cmd.
+        /// All scripts are executed this way.
+        /// </summary>
+        /// <param name="testUserArgument"></param>
+        [Theory]
+        [InlineData(@"""abc"" d e")]
+        [InlineData(@"""abc""      d e")]
+        [InlineData("\"abc\"\t\td\te")]
+        [InlineData(@"a\\b d""e f""g h")]
+        [InlineData(@"\ \\ \\\")]
+        [InlineData(@"a\""b c d")]
+        [InlineData(@"a\\""b c d")]
+        [InlineData(@"a\\\""b c d")]
+        [InlineData(@"a\\\\""b c d")]
+        [InlineData(@"a\\\\""b c"" d e")]
+        [InlineData(@"a""b c""d e""f g""h i""j k""l")]
+        [InlineData(@"a b c""def")]
+        [InlineData(@"""\a\"" \\""\\\ b c")]
+        [InlineData(@"a\""b \\ cd ""\e f\"" \\""\\\")]
+        public void TestArgumentForwardingProcessStartViaCmd(string testUserArgument)
+        {
+
+            Console.WriteLine("Press a key");
+            Console.Read();
+
+            // Get Baseline Argument Evaluation via Reflector
+            var rawEvaluatedArgument = RawEvaluateArgumentString(testUserArgument);
+
+            // Escape and Re-Evaluate the rawEvaluatedArgument
+            var escapedEvaluatedRawArgument = EscapeAndEvaluateArgumentString(rawEvaluatedArgument, useComSpec: true);
+
+            rawEvaluatedArgument.Length.Should().Be(escapedEvaluatedRawArgument.Length);
+
+            for (int i = 0; i < rawEvaluatedArgument.Length; ++i)
+            {
+                var rawArg = rawEvaluatedArgument[i];
+                var escapedArg = escapedEvaluatedRawArgument[i];
+
+                rawArg.Should().Be(escapedArg);
+            }
+        }
+
+        /// <summary>
         /// EscapeAndEvaluateArgumentString returns a representation of string[] args
         /// when rawEvaluatedArgument is passed as an argument to a process using
-        /// Command.Create(). Ideally this should escape the argument such that 
+        /// Command.Create(). Ideally this should escape the argument such that
         /// the output is == rawEvaluatedArgument.
         /// </summary>
         /// <param name="rawEvaluatedArgument">A string[] representing string[] args as already evaluated by a process</param>
         /// <returns></returns>
-        private string[] EscapeAndEvaluateArgumentString(string[] rawEvaluatedArgument)
+        private string[] EscapeAndEvaluateArgumentString(string[] rawEvaluatedArgument, bool useComSpec)
         {
-            var commandResult = Command.Create(ReflectorPath, rawEvaluatedArgument)
+            var commandResult = Command.Create(ReflectorPath, rawEvaluatedArgument, /*framework*/ null, useComSpec)
                 .CaptureStdErr()
                 .CaptureStdOut()
                 .Execute();
@@ -176,7 +223,7 @@ namespace Microsoft.DotNet.Tests.ArgumentForwarding
         /// <summary>
         /// EscapeAndEvaluateArgumentString returns a representation of string[] args
         /// when rawEvaluatedArgument is passed as an argument to a process using
-        /// Command.Create(). Ideally this should escape the argument such that 
+        /// Command.Create(). Ideally this should escape the argument such that
         /// the output is == rawEvaluatedArgument.
         /// </summary>
         /// <param name="rawEvaluatedArgument">A string[] representing string[] args as already evaluated by a process</param>
@@ -199,7 +246,7 @@ namespace Microsoft.DotNet.Tests.ArgumentForwarding
 
         /// <summary>
         /// Parse the output of the reflector into a string array.
-        /// Reflector output is simply string[] args written to 
+        /// Reflector output is simply string[] args written to
         /// one string separated by commas.
         /// </summary>
         /// <param name="reflectorOutput"></param>
@@ -211,7 +258,7 @@ namespace Microsoft.DotNet.Tests.ArgumentForwarding
 
         /// <summary>
         /// Parse the output of the reflector into a string array.
-        /// Reflector output is simply string[] args written to 
+        /// Reflector output is simply string[] args written to
         /// one string separated by commas.
         /// </summary>
         /// <param name="reflectorOutput"></param>

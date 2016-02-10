@@ -249,9 +249,10 @@ namespace Microsoft.DotNet.Cli.Utils
                 command = args.FirstOrDefault();
                 args = args.Skip(1);
             }
-            var cmdEscapedArgs = ArgumentEscaper.EscapeAndConcatenateArgArrayForCmdProcessStart(args);
+            var cmdEscapedArgs = ArgumentEscaper.EscapeAndConcatenateArgArrayForCmdProcessStart(args,
+                escapeArgsForProcessStart: Path.GetExtension(command) == ".exe" || Path.GetExtension(command) == ".com");
 
-            if (ArgumentEscaper.ShouldSurroundWithQuotes(command))
+            if (ArgumentEscaper.ShouldSurroundWithQuotes(command, isForCmd: true))
             {
                 command = $"\"{command}\"";
             }
