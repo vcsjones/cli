@@ -18,5 +18,9 @@
     }
   },
 
+  "content": [
+    "../../TestAssets/TestProjects/TestApp/**/*"
+  ],
+
   "testRunner": "xunit"
 }

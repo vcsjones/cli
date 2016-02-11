@@ -22,7 +22,7 @@ namespace Microsoft.DotNet.Cli.Utils
                    ResolveFromPath(commandName, args);
         }
         
-        public static CommandSpec TryResolveScriptCommandSpec(string commandName, IEnumerable<string> args, ProjectContext project)
+        public static CommandSpec TryResolveScriptCommandSpec(string commandName, IEnumerable<string> args, Project project)
         {
             return ResolveFromRootedCommand(commandName, args) ??
                    ResolveFromProjectPath(commandName, args, project) ??
@@ -46,13 +46,12 @@ namespace Microsoft.DotNet.Cli.Utils
                 : CreateCommandSpecPreferringExe(commandName, args, commandPath, CommandResolutionStrategy.BaseDirectory);
         }
         
-        private static CommandSpec ResolveFromProjectPath(string commandName, IEnumerable<string> args, ProjectContext project)
+        private static CommandSpec ResolveFromProjectPath(string commandName, IEnumerable<string> args, Project project)
         {
-            //todo review this before checkin
             var commandPath = Env.GetCommandPathFromRootPath(project.ProjectDirectory, commandName, "", ".sh", ".cmd");
             return commandPath == null
                 ? null
-                : CreateCommandSpecPreferringExe(commandName, args, commandPath, CommandResolutionStrategy.BaseDirectory);
+                : CreateCommandSpecPreferringExe(commandName, args, commandPath, CommandResolutionStrategy.ProjectLocal);
         }
 
         private static CommandSpec ResolveFromRootedCommand(string commandName, IEnumerable<string> args)

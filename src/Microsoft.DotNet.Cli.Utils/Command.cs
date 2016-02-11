@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using NuGet.Frameworks;
+using Microsoft.DotNet.ProjectModel;
 
 namespace Microsoft.DotNet.Cli.Utils
 {
@@ -40,9 +41,9 @@ namespace Microsoft.DotNet.Cli.Utils
             ResolutionStrategy = commandSpec.ResolutionStrategy;
         }
 
-        public static Command CreateDotNet(string commandName, IEnumerable<string> args, NuGetFramework framework = null, bool useComSpec = false)
+        public static Command CreateDotNet(string commandName, IEnumerable<string> args, NuGetFramework framework = null)
         {
-            return Create("dotnet", new[] { commandName }.Concat(args), framework, useComSpec);
+            return Create("dotnet", new[] { commandName }.Concat(args), framework);
         }
 
         /// <summary>
@@ -69,9 +70,9 @@ namespace Microsoft.DotNet.Cli.Utils
             return command;
         }
         
-        public static Command CreateForScript(string commandName, IEnumerable<string> args, NuGetFramework framework = null)
+        public static Command CreateForScript(string commandName, IEnumerable<string> args, Project project)
         {
-            var commandSpec = CommandResolver.TryResolveScriptCommandSpec(commandName, args, framework);
+            var commandSpec = CommandResolver.TryResolveScriptCommandSpec(commandName, args, project);
 
             if (commandSpec == null)
             {

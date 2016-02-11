@@ -17,18 +17,18 @@ namespace Microsoft.DotNet.Cli.Utils
 
         public static Command CreateCommandForScript(Project project, string scriptCommandLine, Func<string, string> getVariable)
         {
-            var scriptArguments = ParseScriptArguments(scriptCommandLine, getVariable);
+            var scriptArguments = ParseScriptArguments(project, scriptCommandLine, getVariable);
             if (scriptArguments == null)
             {
                 throw new Exception($"ScriptExecutor: failed to parse script \"{scriptCommandLine}\"");
             }
             
             return Command
-                    .CreateForScript(scriptArguments.First(), scriptArguments.Skip(1))
+                    .CreateForScript(scriptArguments.First(), scriptArguments.Skip(1), project)
                     .WorkingDirectory(project.ProjectDirectory);
         }
 
-        private static IEnumerable<string> ParseScriptArguments(string scriptCommandLine, Func<string, string> getVariable)
+        private static IEnumerable<string> ParseScriptArguments(Project project, string scriptCommandLine, Func<string, string> getVariable)
         {
             var scriptArguments = CommandGrammar.Process(
                 scriptCommandLine,

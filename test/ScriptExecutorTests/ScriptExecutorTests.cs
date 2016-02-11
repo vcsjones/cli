@@ -1,13 +1,18 @@
 ﻿using System;
+using System.IO;
+using System.Collections.Generic;
 using Microsoft.DotNet.Cli.Utils;
+using Microsoft.DotNet.ProjectModel;
 using Microsoft.DotNet.Tools.Test.Utilities;
 using Xunit;
+using FluentAssertions;
+using NuGet.Frameworks;
 
-namespace Microsoft.DotNet.Utils.ScriptExecutor.Tests
+namespace Microsoft.DotNet.Cli.Utils.ScriptExecutorTests
 {
     public class ScriptExecutorTests : TestBase
     {
-        private static readonly string s_testProjectRoot = Path.Combine(AppContext.BaseDirectory, "TestProjects");
+        private static readonly string s_testProjectRoot = Path.Combine(AppContext.BaseDirectory, "TestAssets/TestProjects");
 
         private TempDirectory _root;
 
@@ -17,69 +22,95 @@ namespace Microsoft.DotNet.Utils.ScriptExecutor.Tests
         }
 
         [Fact]
-        public Test_Project_Local_Script_is_Resolved()
+        public void Test_Project_Local_Script_is_Resolved()
         {
             var sourceTestProjectPath = Path.Combine(s_testProjectRoot, "TestApp");
             var binTestProjectPath = _root.CopyDirectory(sourceTestProjectPath).Path;
 
-            var project = ProjectContext.Create(binTestProjectPath, "dnxcore50").Project;
+            var project = ProjectContext.Create(binTestProjectPath, NuGetFramework.Parse("dnxcore50")).ProjectFile;
 
-            CreateTestScriptFile("some.script", binTestProjectPath);
+            CreateTestFile("some.script", binTestProjectPath);
             var scriptCommandLine = "some.script";
 
-            var command = ScriptExecutor.CreateCommandForScript(project, scriptCommandLine, null);
+            var command = ScriptExecutor.CreateCommandForScript(project, scriptCommandLine, new Dictionary<string, string>());
 
-            Assert.True(command != null);
-            Assert.Equal(CommandResolutionStrategy.ProjectLocal, command.ResolutionStrategy);
+            command.Should().NotBeNull();
+            command.ResolutionStrategy.Should().Be(CommandResolutionStrategy.ProjectLocal);
         }
         
         [Fact]
-        public Test_Nonexistent_Project_Local_Script_is_not_Resolved()
+        public void Test_Nonexistent_Project_Local_Script_is_not_Resolved()
         {
             var sourceTestProjectPath = Path.Combine(s_testProjectRoot, "TestApp");
             var binTestProjectPath = _root.CopyDirectory(sourceTestProjectPath).Path;
 
-            var project = ProjectContext.Create(binTestProjectPath, "dnxcore50").Project;
+            var project = ProjectContext.Create(binTestProjectPath, NuGetFramework.Parse("dnxcore50")).ProjectFile;
 
             var scriptCommandLine = "nonexistent.script";
 
-            Assert.Throws<CommandUnknownException>(
-                () => ScriptExecutor.CreateCommandForScript(project, scriptCommandLine, null));
+            Action action = () => ScriptExecutor.CreateCommandForScript(project, scriptCommandLine, new Dictionary<string, string>());
+            action.ShouldThrow<CommandUnknownException>();
         }
         
         [Theory]
         [InlineData(".sh")]
         [InlineData(".cmd")]
-        public Test_Extension_Inference_For_Project_Local_Scripts(var extension)
+        public void Test_Extension_Inference_in_Resolution_for_Project_Local_Scripts(string extension)
         {
             var sourceTestProjectPath = Path.Combine(s_testProjectRoot, "TestApp");
             var binTestProjectPath = _root.CopyDirectory(sourceTestProjectPath).Path;
 
-            var project = ProjectContext.Create(binTestProjectPath, "dnxcore50").Project;
+            var project = ProjectContext.Create(binTestProjectPath, NuGetFramework.Parse("dnxcore50")).ProjectFile;
 
-            CreateTestScriptFile("script" + extension, binTestProjectPath);
+            CreateTestFile("script" + extension, binTestProjectPath);
 
             // Don't include extension
             var scriptCommandLine = "script";
 
-            var command = ScriptExecutor.CreateCommandForScript(project, scriptCommandLine, null);
+            var command = ScriptExecutor.CreateCommandForScript(project, scriptCommandLine, new Dictionary<string, string>());
 
-            Assert.True(command != null);
-            Assert.Equal(CommandResolutionStrategy.ProjectLocal, command.ResolutionStrategy);
+            command.Should().NotBeNull();
+            command.ResolutionStrategy.Should().Be(CommandResolutionStrategy.ProjectLocal);
         }
-        
+
         [Fact]
-        public Test_Script_Builtins_Fail()
+        public void Test_Script_Exe_Files_Dont_Use_Cmd_or_Sh()
         {
             var sourceTestProjectPath = Path.Combine(s_testProjectRoot, "TestApp");
             var binTestProjectPath = _root.CopyDirectory(sourceTestProjectPath).Path;
 
-            var project = ProjectContext.Create(binTestProjectPath, "dnxcore50").Project;
+            var project = ProjectContext.Create(binTestProjectPath, NuGetFramework.Parse("dnxcore50")).ProjectFile;
+
+            CreateTestFile("some.exe", binTestProjectPath);
+            var scriptCommandLine = "some.exe";
+
+            var command = ScriptExecutor.CreateCommandForScript(project, scriptCommandLine, new Dictionary<string, string>());
+
+            command.Should().NotBeNull();
+            command.ResolutionStrategy.Should().Be(CommandResolutionStrategy.ProjectLocal);
+
+            Path.GetFileName(command.CommandName).Should().NotBe("cmd.exe");
+            Path.GetFileName(command.CommandName).Should().NotBe("sh");
+        }
+        
+        [Fact]
+        public void Test_Script_Builtins_Fail()
+        {
+            var sourceTestProjectPath = Path.Combine(s_testProjectRoot, "TestApp");
+            var binTestProjectPath = _root.CopyDirectory(sourceTestProjectPath).Path;
+
+            var project = ProjectContext.Create(binTestProjectPath, NuGetFramework.Parse("dnxcore50")).ProjectFile;
 
             var scriptCommandLine = "echo";
 
-            Assert.Throws<CommandUnknownException>(
-                () => ScriptExecutor.CreateCommandForScript(project, scriptCommandLine, null));
+            Action action = () => ScriptExecutor.CreateCommandForScript(project, scriptCommandLine, new Dictionary<string, string>());
+            action.ShouldThrow<CommandUnknownException>();
+        }
+
+        private void CreateTestFile(string filename, string directory)
+        {
+            string path = Path.Combine(directory, filename);
+            File.WriteAllText(path, "echo hello");
         }
     }
 }
