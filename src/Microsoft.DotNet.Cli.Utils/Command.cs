@@ -55,9 +55,23 @@ namespace Microsoft.DotNet.Cli.Utils
         /// <param name="args"></param>
         /// <param name="framework"></param>
         /// <returns></returns>
-        public static Command Create(string commandName, IEnumerable<string> args, NuGetFramework framework = null, bool useComSpec = false)
+        public static Command Create(string commandName, IEnumerable<string> args, NuGetFramework framework = null)
         {
-            var commandSpec = CommandResolver.TryResolveCommandSpec(commandName, args, framework, useComSpec);
+            var commandSpec = CommandResolver.TryResolveCommandSpec(commandName, args, framework);
+
+            if (commandSpec == null)
+            {
+                throw new CommandUnknownException(commandName);
+            }
+
+            var command = new Command(commandSpec);
+
+            return command;
+        }
+        
+        public static Command CreateForScript(string commandName, IEnumerable<string> args, NuGetFramework framework = null)
+        {
+            var commandSpec = CommandResolver.TryResolveScriptCommandSpec(commandName, args, framework);
 
             if (commandSpec == null)
             {

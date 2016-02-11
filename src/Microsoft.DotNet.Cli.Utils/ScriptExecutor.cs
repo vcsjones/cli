@@ -17,107 +17,15 @@ namespace Microsoft.DotNet.Cli.Utils
 
         public static Command CreateCommandForScript(Project project, string scriptCommandLine, Func<string, string> getVariable)
         {
-            var scriptArguments = ParseScriptArguments(scriptCommandLine);
+            var scriptArguments = ParseScriptArguments(scriptCommandLine, getVariable);
             if (scriptArguments == null)
             {
-                return new NullCommand();
-            }
-
-            if (ScriptCommandCanBeResolved(scriptArguments))
-            {
-                return Command.Create(scriptArguments.FirstOrDefault(), scriptArguments.Skip(1))
-                    .WorkingDirectory(project.ProjectDirectory);
-            }
-            else
-            {
-                return CreateScriptShellCommand(scriptArguments);
-            }
-
-        }
-
-        public static Command CreateScriptShellCommand(IEnumerable<string> scriptArguments)
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return CreateWindowsScriptShellCommand(scriptArguments);
-            }
-            else
-            {
-                return CreateUnixScriptShellCommand(scriptArguments);
-            }
-        }
-
-        public static Command CreateWindowsScriptShellCommand(IEnumerable<string> scriptArguments)
-        {
-            var scriptCommand = scriptArguments.First();
-
-            scriptCommand = scriptCommand.Replace(
-                Path.AltDirectorySeparatorChar, 
-                Path.DirectorySeparatorChar);
-                
-            scriptArguments[0] = scriptCommand;
-
-            var comSpec = Environment.GetEnvironmentVariable("ComSpec");
-            if (string.IsNullOrEmpty(comSpec))
-            {
-                throw new Exception("Expected environment variable ComSpec to be defined.");
-            }
-
-            var shellCommandArguments = new string[] { comSpec }
-                .Concat(scriptArguments)
-                .ToArray();
-
-            return Command
-                    .Create(shellCommandArguments.First(), shellCommandArguments.Skip(1), useComSpec: true)
-                    .WorkingDirectory(project.ProjectDirectory);
-        }
-
-        public static Command CreateUnixScriptShellCommand(IEnumerable<string> scriptArguments)
-        {
-            var scriptCommand = ResolveUnixScriptCommand(scriptArguments);
-            scriptArguments[0] = scriptCommand;
-
-            // Always use /usr/bin/env bash -c in order to support redirection and so on; similar to Windows case.
-            // Unlike Windows, must escape quotation marks within the newly-quoted string.
-            var shellCommandArguments = new[] { "/usr/bin/env", "bash", "-c", "\"" }
-                .Concat(scriptArguments.Select(argument => argument.Replace("\"", "\\\"")))
-                .Concat(new[] { "\"" })
-                .ToArray();
-
-            return Command
-                .Create(shellCommandArguments.First(), shellCommandArguments.Skip(1))
-                .WorkingDirectory(project.ProjectDirectory);
-        }
-        
-        private static string ResolveUnixScriptCommand(IEnumerable<string> scriptArguments)
-        {
-            var scriptCommandCandidates = GenerateBashScriptCommandVariations(scriptArguments.First());
-            var scriptCommand = scriptArguments.First();
-            
-            foreach (var candidate in scriptCommandCandidates)
-            {
-                try
-                {
-                    if (File.Exists(candidate))
-                    {
-                        scriptCommand = candidate;
-                    }
-                }
-                catch (Exception e) {}
+                throw new Exception($"ScriptExecutor: failed to parse script \"{scriptCommandLine}\"");
             }
             
-            return scriptCommand;
-        }
-
-        private static IEnumerable<string> GenerateBashScriptCommandVariations(string scriptCommand)
-        {
-            return new string[]
-            {
-                scriptCommand,
-                "./" + scriptCommand,
-                scriptCommand + ".sh",
-                "./" + scriptCommand + ".sh"
-            };
+            return Command
+                    .CreateForScript(scriptArguments.First(), scriptArguments.Skip(1))
+                    .WorkingDirectory(project.ProjectDirectory);
         }
 
         private static IEnumerable<string> ParseScriptArguments(string scriptCommandLine, Func<string, string> getVariable)
@@ -127,7 +35,6 @@ namespace Microsoft.DotNet.Cli.Utils
                 GetScriptVariable(project, getVariable),
                 preserveSurroundingQuotes: false);
 
-            // Ensure the array won't be empty and the elements won't be null or empty strings.
             scriptArguments = scriptArguments.Where(argument => !string.IsNullOrEmpty(argument)).ToArray();
             if (scriptArguments.Length == 0)
             {
@@ -135,13 +42,6 @@ namespace Microsoft.DotNet.Cli.Utils
             }
 
             return scriptArguments;
-        }
-
-        private static bool ScriptCommandCanBeResolved(IEnumerable<string> scriptArguments)
-        {
-            var resolved = CommandResolver.TryResolveCommandSpec(scriptArguments.FirstOrDefault(), scriptArguments.Skip(1));
-
-            return resolved != null;
         }
 
         private static Func<string, string> WrapVariableDictionary(IDictionary<string, string> contextVariables)

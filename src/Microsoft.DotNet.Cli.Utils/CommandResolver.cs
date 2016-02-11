@@ -40,7 +40,16 @@ namespace Microsoft.DotNet.Cli.Utils
 
         private static CommandSpec ResolveFromAppBase(string commandName, IEnumerable<string> args)
         {
-            var commandPath = Env.GetCommandPathFromAppBase(AppContext.BaseDirectory, commandName);
+            var commandPath = Env.GetCommandPathFromRootPath(AppContext.BaseDirectory, commandName);
+            return commandPath == null
+                ? null
+                : CreateCommandSpecPreferringExe(commandName, args, commandPath, CommandResolutionStrategy.BaseDirectory);
+        }
+        
+        private static CommandSpec ResolveFromProjectPath(string commandName, IEnumerable<string> args, ProjectContext project)
+        {
+            //todo review this before checkin
+            var commandPath = Env.GetCommandPathFromRootPath(project.ProjectDirectory, commandName, "", ".sh", ".cmd");
             return commandPath == null
                 ? null
                 : CreateCommandSpecPreferringExe(commandName, args, commandPath, CommandResolutionStrategy.BaseDirectory);
