@@ -6,18 +6,13 @@
 import jobs.generation.Utilities;
 
 def project = GithubProject
+def branch = GithubBranch
 
 def osList = ['Ubuntu', 'OSX', 'Windows_NT', 'CentOS7.1']
-
-def machineLabelMap = ['Ubuntu':'ubuntu-doc',
-                       'OSX':'mac',
-                       'Windows_NT':'windows',
-                       'CentOS7.1' : 'centos-71']
 
 def static getBuildJobName(def configuration, def os) {
     return configuration.toLowerCase() + '_' + os.toLowerCase()
 }
-
 
 [true, false].each { isPR ->
     ['Debug', 'Release'].each { configuration ->
@@ -64,10 +59,10 @@ def static getBuildJobName(def configuration, def os) {
             }
 
             Utilities.setMachineAffinity(newJob, os, 'latest-or-auto')
-            Utilities.standardJobSetup(newJob, project, isPR)
+            Utilities.standardJobSetup(newJob, project, isPR, "*/${branch}")
             Utilities.addXUnitDotNETResults(newJob, '**/*-testResults.xml')
             if (isPR) {
-                Utilities.addGithubPRTrigger(newJob, "${os} ${configuration} Build")
+                Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} ${configuration} Build")
             }
             else {
                 Utilities.addGithubPushTrigger(newJob)
