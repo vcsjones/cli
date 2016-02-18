@@ -5,9 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.DotNet.Cli.Compiler.Common;
-using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.DotNet.Cli.Utils;
 using Microsoft.DotNet.Files;
 using Microsoft.DotNet.ProjectModel;
@@ -68,7 +66,7 @@ namespace Microsoft.DotNet.Tools.Publish
 
             foreach (var project in ProjectContexts)
             {
-                if (PublishProjectContext(project, BuildBasePath, OutputPath, Configuration, NativeSubdirectories))
+                if (PublishProjectContext(project))
                 {
                     NumberOfPublishedProjects++;
                 }
@@ -85,25 +83,22 @@ namespace Microsoft.DotNet.Tools.Publish
         /// <param name="configuration">Debug or Release</param>
         /// <param name="nativeSubdirectories"></param>
         /// <returns>Return 0 if successful else return non-zero</returns>
-        private bool PublishProjectContext(ProjectContext context,
-                                           string buildBasePath,
-                                           string outputPath,
-                                           string configuration,
-                                           bool nativeSubdirectories) 
+        private bool PublishProjectContext(ProjectContext context) 
         {
             Reporter.Output.WriteLine($"Publishing {context.RootProject.Identity.Name.Yellow()} for {context.TargetFramework.DotNetFrameworkName.Yellow()}/{context.RuntimeIdentifier.Yellow()}");
 
-            var options = context.ProjectFile.GetCompilerOptions(context.TargetFramework, configuration);
+            var options = context.ProjectFile.GetCompilerOptions(context.TargetFramework, Configuration);
+            var outputPath = OutputPath;
 
             if (string.IsNullOrEmpty(outputPath))
             {
-                outputPath = Path.Combine(context.GetOutputPaths(configuration, buildBasePath, outputPath).RuntimeOutputPath, PublishSubfolderName);
+                outputPath = Path.Combine(context.GetOutputPaths(Configuration, BuildBasePath, outputPath).RuntimeOutputPath, PublishSubfolderName);
             }
 
             var contextVariables = new Dictionary<string, string>
             {
                 { "publish:ProjectPath", context.ProjectDirectory },
-                { "publish:Configuration", configuration },
+                { "publish:Configuration", Configuration },
                 { "publish:OutputPath", outputPath },
                 { "publish:TargetFramework", context.TargetFramework.GetShortFolderName() },
                 { "publish:FullTargetFramework", context.TargetFramework.DotNetFrameworkName },
@@ -124,7 +119,7 @@ namespace Microsoft.DotNet.Tools.Publish
                 "--runtime",
                 context.RuntimeIdentifier,
                 "--configuration",
-                configuration,
+                Configuration,
                 context.ProjectFile.ProjectDirectory
             };
 
@@ -134,10 +129,10 @@ namespace Microsoft.DotNet.Tools.Publish
                 args.Add(VersionSuffix);
             }
 
-            if (!string.IsNullOrEmpty(buildBasePath))
+            if (!string.IsNullOrEmpty(BuildBasePath))
             {
                 args.Add("--build-base-path");
-                args.Add(buildBasePath);
+                args.Add(BuildBasePath);
             }
 
             var result = Build.BuildCommand.Run(args.ToArray());
@@ -147,7 +142,7 @@ namespace Microsoft.DotNet.Tools.Publish
             }
 
             // Use a library exporter to collect publish assets
-            var exporter = context.CreateExporter(configuration);
+            var exporter = context.CreateExporter(Configuration);
 
             var runtimeAssemblies = new List<string>();
 
@@ -158,7 +153,7 @@ namespace Microsoft.DotNet.Tools.Publish
                 runtimeAssemblies.AddRange(export.RuntimeAssemblies.Select(r => Path.GetFileName(r.ResolvedPath)));
 
                 PublishFiles(export.RuntimeAssemblies, outputPath, nativeSubdirectories: false);
-                PublishFiles(export.NativeLibraries, outputPath, nativeSubdirectories);
+                PublishFiles(export.NativeLibraries, outputPath, NativeSubdirectories);
                 export.RuntimeAssets.StructuredCopyTo(outputPath);
 
                 if (options.PreserveCompilationContext.GetValueOrDefault())
