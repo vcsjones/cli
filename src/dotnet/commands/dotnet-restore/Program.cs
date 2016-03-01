@@ -179,11 +179,15 @@ namespace Microsoft.DotNet.Tools.Restore
 
             Console.WriteLine($"Restoring Tool '{tooldep.Name}' for '{projectPath}' in '{tempPath}'");
 
-            File.WriteAllText(projectPath, GenerateProjectJsonContents(new[] {"dnxcore50"}, tooldep));
+            File.WriteAllText(
+                projectPath,
+                GenerateProjectJsonContents(
+                    new[] { new FrameworkContent("netstandardapp1.5", "dnxcore50", "portable-net452+win81") },
+                    tooldep));
             return NuGet3.Restore(new [] { $"{projectPath}", "--runtime", $"{DefaultRid}"}.Concat(args), quiet) == 0;
         }
 
-        private static string GenerateProjectJsonContents(IEnumerable<string> frameworks, LibraryRange tooldep)
+        private static string GenerateProjectJsonContents(IEnumerable<FrameworkContent> frameworks, LibraryRange tooldep)
         {
             var sb = new StringBuilder();
             sb.AppendLine("{");
@@ -193,14 +197,29 @@ namespace Microsoft.DotNet.Tools.Restore
             sb.AppendLine("    \"frameworks\": {");
             foreach (var framework in frameworks)
             {
-                var importsStatement = "\"imports\": \"portable-net452+win81\"";
-                
-                sb.AppendLine($"        \"{framework}\": {{ {importsStatement} }}");
+                var quotedImports = framework.Imports.Select(import => $"\"{import}\"");
+                var separatedImports = string.Join(",", quotedImports);
+                var importsStatement = $"\"imports\": [ {separatedImports} ]";
+
+                sb.AppendLine($"        \"{framework.Name}\": {{ {importsStatement} }}");
             }
             sb.AppendLine("    }");
             sb.AppendLine("}");
             var pjContents = sb.ToString();
             return pjContents;
+        }
+
+        private struct FrameworkContent
+        {
+            public FrameworkContent(string name, params string[] imports)
+            {
+                Name = name;
+                Imports = imports;
+            }
+
+            public string Name { get; }
+
+            public string[] Imports { get; }
         }
     }
 }
