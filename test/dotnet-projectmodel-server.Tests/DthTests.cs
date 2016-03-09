@@ -374,6 +374,10 @@ namespace Microsoft.DotNet.ProjectModel.Server.Tests
             // manipulate lock file
             var lockFile = Path.Combine(testProject, LockFile.FileName);
             var lockFileModel = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(lockFile));
+            var done = false;
+            
+            var targetName = string.Empty;
+            var libraryName = string.Empty;
             foreach (JProperty target in lockFileModel["targets"])
             {
                 foreach (JProperty library in target.Value)
@@ -382,12 +386,34 @@ namespace Microsoft.DotNet.ProjectModel.Server.Tests
                     if (compile != null)
                     {
                         var firstCompilePath = compile.Properties().First();
-                        compile.Remove(firstCompilePath.Name);
+                        
+                        // create an invalid path
+                        compile.Remove(firstCompilePath.Name);                        
                         compile.Add("aaa" + firstCompilePath.Name, firstCompilePath.Value);
-                        File.WriteAllText(lockFile, JsonConvert.SerializeObject(lockFileModel));
-                        Console.WriteLine(lockFile);
-                        return;
+                        File.WriteAllText(lockFile, JsonConvert.SerializeObject(lockFileModel, Formatting.Indented));
+                        
+                        targetName = target.Name;
+                        libraryName = library.Name;
+                        done = true;
+                        break;
                     }
+                }
+                
+                if (done)
+                {
+                    break;
+                }
+            }
+            
+            using (var server = new DthTestServer(_loggerFactory))
+            using (var client = new DthTestClient(server))
+            {
+                client.Initialize(testProject);
+                
+                var messages = client.DrainAllMessages();
+                foreach (var message in messages)
+                {
+                    Console.WriteLine($"{message.MessageType} => {message.Payload.ToString()}");
                 }
             }
         }
