@@ -4,6 +4,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Microsoft.DotNet.ProjectModel.Graph;
 using Microsoft.DotNet.TestFramework;
 using Microsoft.DotNet.Tools.Test.Utilities;
 using Microsoft.Extensions.Logging;
@@ -18,7 +19,7 @@ namespace Microsoft.DotNet.ProjectModel.Server.Tests
     {
         private readonly TestAssetsManager _testAssetsManager;
         private readonly ILoggerFactory _loggerFactory;
-        
+
         public DthTests()
         {
             _loggerFactory = new LoggerFactory();
@@ -36,7 +37,7 @@ namespace Microsoft.DotNet.ProjectModel.Server.Tests
             {
                 _loggerFactory.AddConsole(LogLevel.Warning);
             }
-            
+
             _testAssetsManager = new TestAssetsManager(
                 Path.Combine(RepoRoot, "TestAssets", "ProjectModelServer", "DthTestProjects", "src"));
         }
@@ -118,7 +119,7 @@ namespace Microsoft.DotNet.ProjectModel.Server.Tests
                 Console.WriteLine("Test is skipped on Linux");
                 return;
             }
-            
+
             var projectPath = Path.Combine(_testAssetsManager.AssetsRoot, testProjectName);
             Assert.NotNull(projectPath);
 
@@ -292,7 +293,7 @@ namespace Microsoft.DotNet.ProjectModel.Server.Tests
             var testAssetsPath = Path.Combine(RepoRoot, "TestAssets", "ProjectModelServer");
             var assetsManager = new TestAssetsManager(testAssetsPath);
             var testSource = assetsManager.CreateTestInstance("IncorrectProjectJson").TestRoot;
-            
+
             using (var server = new DthTestServer(_loggerFactory))
             using (var client = new DthTestClient(server))
             {
@@ -337,29 +338,57 @@ namespace Microsoft.DotNet.ProjectModel.Server.Tests
                         .AssertProperty<string>("Path", v => v.Contains("InvalidGlobalJson"));
             }
         }
-        
+
         [Fact]
         public void RecoverFromGlobalError()
         {
             var testProject = _testAssetsManager.CreateTestInstance("EmptyConsoleApp")
                                                 .WithLockFiles()
                                                 .TestRoot;
-                                                
+
             using (var server = new DthTestServer(_loggerFactory))
             using (var client = new DthTestClient(server))
             {
                 var projectFile = Path.Combine(testProject, Project.FileName);
                 var content = File.ReadAllText(projectFile);
                 File.WriteAllText(projectFile, content + "}");
-                
+
                 client.Initialize(testProject);
                 var messages = client.DrainAllMessages();
                 messages.ContainsMessage(MessageTypes.Error);
-                
+
                 File.WriteAllText(projectFile, content);
                 client.SendPayLoad(testProject, MessageTypes.FilesChanged);
                 var clearError = client.DrainTillFirst(MessageTypes.Error);
                 clearError.Payload.AsJObject().AssertProperty("Message", null as string);
+            }
+        }
+
+        [Fact]
+        public void InvalidAssemblyPathInLockFile()
+        {
+            var testProject = _testAssetsManager.CreateTestInstance("EmptyConsoleApp")
+                                                .WithLockFiles()
+                                                .TestRoot;
+
+            // manipulate lock file
+            var lockFile = Path.Combine(testProject, LockFile.FileName);
+            var lockFileModel = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(lockFile));
+            foreach (JProperty target in lockFileModel["targets"])
+            {
+                foreach (JProperty library in target.Value)
+                {
+                    var compile = library.Value["compile"] as JObject;
+                    if (compile != null)
+                    {
+                        var firstCompilePath = compile.Properties().First();
+                        compile.Remove(firstCompilePath.Name);
+                        compile.Add("aaa" + firstCompilePath.Name, firstCompilePath.Value);
+                        File.WriteAllText(lockFile, JsonConvert.SerializeObject(lockFileModel));
+                        Console.WriteLine(lockFile);
+                        return;
+                    }
+                }
             }
         }
     }

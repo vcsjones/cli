@@ -3,6 +3,7 @@
     "dotnet": { "target": "project" },
     "Microsoft.DotNet.ProjectModel": { "target": "project" },
     "Microsoft.DotNet.Tools.Tests.Utilities": { "target": "project" },
+    "Newtonsoft.Json": "7.0.1",
     "xunit": "2.1.0",
     "dotnet-test-xunit": "1.0.0-dev-91790-12",
 
