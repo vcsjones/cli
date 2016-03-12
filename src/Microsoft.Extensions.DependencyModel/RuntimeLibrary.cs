@@ -17,13 +17,22 @@ namespace Microsoft.Extensions.DependencyModel
             IEnumerable<ResourceAssembly> resourceAssemblies,
             IEnumerable<RuntimeTarget> subTargets,
             IEnumerable<Dependency> dependencies,
-            bool serviceable)
+            bool serviceable,
+            IEnumerable<string> nativeAssets = null)
             : base(type, name, version, hash, dependencies, serviceable)
         {
             Assemblies = assemblies.ToArray();
             ResourceAssemblies = resourceAssemblies.ToArray();
             RuntimeTargets = subTargets.ToArray();
+
+            if (nativeAssets != null)
+            {
+                NativeAssets = nativeAssets.ToArray();    
+            }
+            
         }
+
+        public IReadOnlyList<string> NativeAssets { get; }
 
         public IReadOnlyList<RuntimeAssembly> Assemblies { get; }
 
