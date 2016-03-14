@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "version": "1.0.0-*",
   "compilationOptions": {
     "keyFile": "../../tools/Key.snk",
@@ -6,7 +7,8 @@
   },
   "dependencies": {
     "Microsoft.DotNet.ProjectModel": "1.0.0-*",
-    "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc2-16537"
+    "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc2-16537",
+    "NuGet.ProjectModel": "3.4.0-rtm-0763"
   },
   "frameworks": {
     "net451": {
