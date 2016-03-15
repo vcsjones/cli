@@ -208,38 +208,38 @@ namespace Microsoft.DotNet.Cli.Build
             File.Copy(Path.Combine(Dirs.Corehost, $"{Constants.DynamicLibPrefix}hostfxr{Constants.DynamicLibSuffix}"), Path.Combine(binDir, $"{Constants.DynamicLibPrefix}hostfxr{Constants.DynamicLibSuffix}"), overwrite: true);
 
             // Corehostify binaries
-            foreach (var binaryToCorehostify in BinariesForCoreHost)
-            {
-                try
-                {
-                    // Yes, it is .exe even on Linux. This is the managed exe we're working with
-                    File.Copy(Path.Combine(binDir, $"{binaryToCorehostify}.exe"), Path.Combine(binDir, $"{binaryToCorehostify}.dll"));
-                    File.Delete(Path.Combine(binDir, $"{binaryToCorehostify}.exe"));
-                    File.Copy(Path.Combine(binDir, $"corehost{Constants.ExeSuffix}"), Path.Combine(binDir, binaryToCorehostify + Constants.ExeSuffix));
-                }
-                catch (Exception ex)
-                {
-                    return c.Failed($"Failed to corehostify '{binaryToCorehostify}': {ex.ToString()}");
-                }
-            }
+            // foreach (var binaryToCorehostify in BinariesForCoreHost)
+            // {
+            //     try
+            //     {
+            //         // Yes, it is .exe even on Linux. This is the managed exe we're working with
+            //         File.Copy(Path.Combine(binDir, $"{binaryToCorehostify}.exe"), Path.Combine(binDir, $"{binaryToCorehostify}.dll"));
+            //         File.Delete(Path.Combine(binDir, $"{binaryToCorehostify}.exe"));
+            //         File.Copy(Path.Combine(binDir, $"corehost{Constants.ExeSuffix}"), Path.Combine(binDir, binaryToCorehostify + Constants.ExeSuffix));
+            //     }
+            //     catch (Exception ex)
+            //     {
+            //         return c.Failed($"Failed to corehostify '{binaryToCorehostify}': {ex.ToString()}");
+            //     }
+            // }
 
             // dotnet.exe is from stage0. But we must be using the newly built corehost in stage1
             File.Delete(Path.Combine(binDir, $"dotnet{Constants.ExeSuffix}"));
             File.Copy(Path.Combine(binDir, $"corehost{Constants.ExeSuffix}"), Path.Combine(binDir, $"dotnet{Constants.ExeSuffix}"));
 
             // Crossgen Roslyn
-            var result = Crossgen(c, binDir);
-            if (!result.Success)
-            {
-                return result;
-            }
+            // var result = Crossgen(c, binDir);
+            // if (!result.Success)
+            // {
+            //     return result;
+            // }
 
             // Copy AppDeps
-            result = CopyAppDeps(c, binDir);
-            if (!result.Success)
-            {
-                return result;
-            }
+            // result = CopyAppDeps(c, binDir);
+            // if (!result.Success)
+            // {
+            //     return result;
+            // }
 
             // Generate .version file
             var version = buildVesion.SimpleVersion;
