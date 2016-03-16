@@ -16,12 +16,14 @@ using Microsoft.Extensions.PlatformAbstractions;
 using System.Threading;
 using FluentAssertions;
 using NuGet.Frameworks;
+using NuGet.Versioning;
 using NuGet.ProjectModel;
 
 namespace Microsoft.DotNet.Cli.Utils.Tests
 {
     public class GivenAProjectToolsCommandResolver
     {
+        private static readonly NuGetFramework s_toolPackageFramework = FrameworkConstants.CommonFrameworks.NetStandardApp15;
 
         private static readonly string s_liveProjectDirectory = 
             Path.Combine(AppContext.BaseDirectory, "TestAssets/TestProjects/AppWithToolDependency");
@@ -119,7 +121,7 @@ namespace Microsoft.DotNet.Cli.Utils.Tests
         }
 
         [Fact]
-        public void It_returns_a_CommandSpec_with_Args_as_CommandPath_when_returning_a_CommandSpec_and_CommandArguments_are_null()
+        public void It_returns_a_CommandSpec_with_Args_containing_CommandPath_when_returning_a_CommandSpec_and_CommandArguments_are_null()
         {
             var projectToolsCommandResolver = SetupProjectToolsCommandResolver();
 
@@ -135,41 +137,7 @@ namespace Microsoft.DotNet.Cli.Utils.Tests
             result.Should().NotBeNull();
             
             var commandPath = result.Args.Trim('"');
-            commandPath.Should().Contain("dotnet-hello");
-
-            File.Exists(commandPath).Should().BeTrue();
-        }
-
-
-        [Fact]
-        public void It_writes_a_deps_csv_file_next_to_the_lockfile()
-        {
-            var projectToolsCommandResolver = SetupProjectToolsCommandResolver();
-
-            var commandResolverArguments = new CommandResolverArguments()
-            {
-                CommandName = "dotnet-hello",
-                CommandArguments = null,
-                ProjectDirectory = s_liveProjectDirectory
-            };
-
-            var result = projectToolsCommandResolver.Resolve(commandResolverArguments);
-            result.Should().NotBeNull();
-            
-            var toolPathCalculator = new ToolPathCalculator(nugetPackagesRoot);
-
-            var lockFilePath = toolPathCalculator.GetBestLockFilePath(
-                toolLibrary.Name, 
-                toolLibrary.VersionRange, 
-                s_toolPackageFramework);
-
-            var directory = Path.GetDirectoryName(lockFilePath);
-
-            var depsCsvFile = Directory
-                .EnumerateFiles(directory)
-                .FirstOrDefault(p => Path.GetExtension(p) == FileNameSuffixes.Deps);
-
-            depsJsonFile.Should().NotBeNull();
+            commandPath.Should().Contain("dotnet-hello.dll");
         }
 
         [Fact]
@@ -184,24 +152,35 @@ namespace Microsoft.DotNet.Cli.Utils.Tests
                 ProjectDirectory = s_liveProjectDirectory
             };
 
-            var result = projectToolsCommandResolver.Resolve(commandResolverArguments);
-            result.Should().NotBeNull();
-            
-            var toolPathCalculator = new ToolPathCalculator(nugetPackagesRoot);
-
-            var lockFilePath = toolPathCalculator.GetBestLockFilePath(
-                toolLibrary.Name, 
-                toolLibrary.VersionRange, 
+            var lockFilePath = toolPathCalculator.GetLockFilePath(
+                "dotnet-hello", 
+                new NuGetVersion("2.0.0"), 
                 s_toolPackageFramework);
 
             var directory = Path.GetDirectoryName(lockFilePath);
 
             var depsJsonFile = Directory
                 .EnumerateFiles(directory)
-                .FirstOrDefault(p => Path.GetExtension(p) == FileNameSuffixes.DepsJson);
+                .FirstOrDefault(p => Path.GetFileName(p).EndsWith(FileNameSuffixes.DepsJson));
+
+            if (depsJsonFile != null)
+            {
+                File.Delete(depsJsonFile);
+            }
+
+            var result = projectToolsCommandResolver.Resolve(commandResolverArguments);
+            result.Should().NotBeNull();
+
+            var context = ProjectContext.Create(Path.Combine(s_liveProjectDirectory, "project.json"), s_toolPackageFramework);
+            var nugetPackagesRoot = context.PackagesDirectory;
+           
+            var toolPathCalculator = new ToolPathCalculator(nugetPackagesRoot);
+
+            depsJsonFile = Directory
+                .EnumerateFiles(directory)
+                .FirstOrDefault(p => Path.GetFileName(p).EndsWith(FileNameSuffixes.DepsJson));
 
             depsJsonFile.Should().NotBeNull();
-
         }
 
         private ProjectToolsCommandResolver SetupProjectToolsCommandResolver(
