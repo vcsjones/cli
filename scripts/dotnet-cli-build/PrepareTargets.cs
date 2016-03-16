@@ -207,7 +207,7 @@ namespace Microsoft.DotNet.Cli.Build
             var aptDependencyUtility = new AptDependencyUtility();
 
 
-            foreach (var package in PackageDependencies.DebianPackageBuildDependencies)
+            foreach (var package in PackageDependencies.UbuntuDebianPackageBuildDependencies)
             {
                 if (!AptDependencyUtility.PackageIsInstalled(package))
                 {
@@ -240,6 +240,34 @@ namespace Microsoft.DotNet.Cli.Build
                 if (!AptDependencyUtility.PackageIsInstalled(package))
                 {
                     errorMessageBuilder.Append($"Error: Coreclr package dependency {package} missing.");
+                    errorMessageBuilder.Append(Environment.NewLine);
+                    errorMessageBuilder.Append($"-> install with apt-get install {package}");
+                    errorMessageBuilder.Append(Environment.NewLine);
+                }
+            }
+
+            if (errorMessageBuilder.Length == 0)
+            {
+                return c.Success();
+            }
+            else
+            {
+                return c.Failed(errorMessageBuilder.ToString());
+            }
+        }
+
+        [Target]
+        [BuildPlatforms(BuildPlatform.Ubuntu)]
+        public static BuildTargetResult CheckUbuntuCliBuildDependencies(BuildTargetContext c)
+        {
+            var errorMessageBuilder = new StringBuilder();
+            var stage0 = DotNetCli.Stage0.BinPath;
+
+            foreach (var package in PackageDependencies.UbuntuCliBuildDependencies)
+            {
+                if (!AptDependencyUtility.PackageIsInstalled(package))
+                {
+                    errorMessageBuilder.Append($"Error: CLI build dependency {package} missing.");
                     errorMessageBuilder.Append(Environment.NewLine);
                     errorMessageBuilder.Append($"-> install with apt-get install {package}");
                     errorMessageBuilder.Append(Environment.NewLine);

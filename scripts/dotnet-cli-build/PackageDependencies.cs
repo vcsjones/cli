@@ -7,7 +7,7 @@ namespace Microsoft.DotNet.Cli.Build
 {
     public class PackageDependencies
     {
-        internal static string[] DebianPackageBuildDependencies
+        internal static string[] UbuntuDebianPackageBuildDependencies
         {
             get
             {
@@ -18,6 +18,17 @@ namespace Microsoft.DotNet.Cli.Build
                     "build-essential"
                 };
 
+            }
+        }
+        
+        internal static string [] UbuntuCliBuildDependencies
+        {
+            get
+            {
+                return new string[]
+                {
+                    "cmake2.6"
+                };
             }
         }
 
