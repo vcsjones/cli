@@ -205,7 +205,6 @@ namespace Microsoft.DotNet.Cli.Utils
                 var projectContext = new ProjectContextBuilder()
                     .WithLockFile(toolLockFile)
                     .WithTargetFramework(s_toolPackageFramework.ToString())
-                    .WithRuntimeIdentifiers(new [] { s_currentRuntimeIdentifier })
                     .Build();
 
                 var exporter = projectContext.CreateExporter(Constants.DefaultConfiguration);
@@ -216,7 +215,7 @@ namespace Microsoft.DotNet.Cli.Utils
                         exporter.GetAllExports(), 
                         true, 
                         s_toolPackageFramework, 
-                        s_currentRuntimeIdentifier);
+                        string.Empty);
 
                 using (var fileStream = File.Create(depsPath))
                 {

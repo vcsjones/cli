@@ -42,7 +42,8 @@ namespace Microsoft.DotNet.Cli.Utils
                 commandPath, 
                 commandArguments, 
                 depsFilePath, 
-                commandResolutionStrategy);
+                commandResolutionStrategy,
+                nugetPackagesRoot);
         }
 
         private string GetPackageDirectoryFullPath(LockFilePackageLibrary library, string nugetPackagesRoot)
@@ -69,7 +70,8 @@ namespace Microsoft.DotNet.Cli.Utils
             string commandPath, 
             IEnumerable<string> commandArguments, 
             string depsFilePath,
-            CommandResolutionStrategy commandResolutionStrategy)
+            CommandResolutionStrategy commandResolutionStrategy,
+            string nugetPackagesRoot)
         {
             var commandExtension = Path.GetExtension(commandPath);
 
@@ -79,7 +81,8 @@ namespace Microsoft.DotNet.Cli.Utils
                     commandPath, 
                     commandArguments, 
                     depsFilePath, 
-                    commandResolutionStrategy);
+                    commandResolutionStrategy,
+                    nugetPackagesRoot);
             }
             
             return CreateCommandSpec(commandPath, commandArguments, commandResolutionStrategy);
@@ -89,9 +92,10 @@ namespace Microsoft.DotNet.Cli.Utils
             string commandPath, 
             IEnumerable<string> commandArguments, 
             string depsFilePath,
-            CommandResolutionStrategy commandResolutionStrategy)
+            CommandResolutionStrategy commandResolutionStrategy,
+            string nugetPackagesRoot)
         {
-            var corehost = CoreHost.HostExePath;
+            var host = "dotnet" + Constants.ExeSuffix;
 
             var arguments = new List<string>();
             arguments.Add(commandPath);
@@ -102,9 +106,12 @@ namespace Microsoft.DotNet.Cli.Utils
                 arguments.Add(depsFilePath);
             }
 
+            arguments.Add("--additionalprobingpath");
+            arguments.Add(nugetPackagesRoot);
+
             arguments.AddRange(commandArguments);
 
-            return CreateCommandSpec(corehost, arguments, commandResolutionStrategy);
+            return CreateCommandSpec(host, arguments, commandResolutionStrategy);
         }
 
         private CommandSpec CreateCommandSpec(

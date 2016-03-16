@@ -152,6 +152,11 @@ namespace Microsoft.DotNet.Cli.Utils.Tests
                 ProjectDirectory = s_liveProjectDirectory
             };
 
+            var context = ProjectContext.Create(Path.Combine(s_liveProjectDirectory, "project.json"), s_toolPackageFramework);
+
+            var nugetPackagesRoot = context.PackagesDirectory;
+            var toolPathCalculator = new ToolPathCalculator(nugetPackagesRoot);
+
             var lockFilePath = toolPathCalculator.GetLockFilePath(
                 "dotnet-hello", 
                 new NuGetVersion("2.0.0"), 
@@ -171,11 +176,7 @@ namespace Microsoft.DotNet.Cli.Utils.Tests
             var result = projectToolsCommandResolver.Resolve(commandResolverArguments);
             result.Should().NotBeNull();
 
-            var context = ProjectContext.Create(Path.Combine(s_liveProjectDirectory, "project.json"), s_toolPackageFramework);
-            var nugetPackagesRoot = context.PackagesDirectory;
-           
-            var toolPathCalculator = new ToolPathCalculator(nugetPackagesRoot);
-
+            
             depsJsonFile = Directory
                 .EnumerateFiles(directory)
                 .FirstOrDefault(p => Path.GetFileName(p).EndsWith(FileNameSuffixes.DepsJson));
