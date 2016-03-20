@@ -3,11 +3,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.DotNet.ProjectModel.Compilation.Preprocessor;
-using Microsoft.DotNet.ProjectModel.Files;
 using Microsoft.DotNet.ProjectModel.Graph;
 using Microsoft.DotNet.ProjectModel.Resolution;
 using Microsoft.DotNet.ProjectModel.Utilities;
@@ -107,13 +105,6 @@ namespace Microsoft.DotNet.ProjectModel.Compilation
                     }
                 }
 
-                // Source and analyzer references are not transitive
-                if (library.Parents.Contains(_rootProject))
-                {
-                    sourceReferences.AddRange(libraryExport.SourceReferences);
-                    analyzerReferences.AddRange(libraryExport.AnalyzerReferences);
-                }
-
                 yield return LibraryExportBuilder.Create(library)
                     .WithCompilationAssemblies(compilationAssemblies)
                     .WithSourceReferences(sourceReferences)
@@ -149,10 +140,8 @@ namespace Microsoft.DotNet.ProjectModel.Compilation
             {
                 return ExportProject((ProjectDescription)library);
             }
-            else
-            {
-                return ExportFrameworkLibrary(library);
-            }
+
+            throw new NotSupportedException($"{library} is unknown.");
         }
 
         private LibraryExport ExportPackage(PackageDescription package)
@@ -163,6 +152,8 @@ namespace Microsoft.DotNet.ProjectModel.Compilation
             builder.WithCompilationAssemblies(PopulateAssets(package, package.CompileTimeAssemblies));
             builder.WithSourceReferences(GetSharedSources(package));
             builder.WithAnalyzerReference(GetAnalyzerReferences(package));
+
+            ExportFrameworkAssemblies(builder, package.FrameworkAssemblies);
 
             if (package.ContentFiles.Any())
             {
@@ -276,6 +267,11 @@ namespace Microsoft.DotNet.ProjectModel.Compilation
                 }
             }
 
+            if (project.TargetFrameworkInfo != null)
+            {
+                ExportFrameworkAssemblies(builder, project.TargetFrameworkInfo.FrameworkAssemblies.Select(f => f.Name));
+            }
+
             builder.WithSourceReferences(project.Project.Files.SharedFiles.Select(f =>
                 LibraryAsset.CreateFromAbsolutePath(project.Path, f)
             ));
@@ -317,19 +313,17 @@ namespace Microsoft.DotNet.ProjectModel.Compilation
             return Path.Combine(project.ProjectDirectory, path);
         }
 
-        private LibraryExport ExportFrameworkLibrary(LibraryDescription library)
+        private void ExportFrameworkAssemblies(LibraryExportBuilder builder, IEnumerable<string> frameworkAssemblies)
         {
-            // We assume the path is to an assembly. Framework libraries only export compile-time stuff
-            // since they assume the runtime library is present already
-            var builder = LibraryExportBuilder.Create(library);
-            if (!string.IsNullOrEmpty(library.Path))
+            foreach (var name in frameworkAssemblies)
             {
-                builder.WithCompilationAssemblies(new []
+                string path;
+                Version version;
+                if (FrameworkReferenceResolver.Default.TryGetAssembly(name, builder.Library.Framework, out path, out version))
                 {
-                    new LibraryAsset(library.Identity.Name, null, library.Path)
-                });
+                    builder.AddCompilationAssembly(LibraryAsset.CreateFromAbsolutePath(path));
+                }
             }
-            return builder.Build();
         }
 
         private IEnumerable<LibraryAsset> GetSharedSources(PackageDescription package)

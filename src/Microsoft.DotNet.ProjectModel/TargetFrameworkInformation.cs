@@ -12,6 +12,8 @@ namespace Microsoft.DotNet.ProjectModel
         public NuGetFramework FrameworkName { get; set; }
 
         public IReadOnlyList<LibraryRange> Dependencies { get; set; }
+        
+        public IReadOnlyList<LibraryRange> FrameworkAssemblies { get; set; }
 
         public CommonCompilerOptions CompilerOptions { get; set; }
 

@@ -4,9 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Microsoft.DotNet.ProjectModel.Utilities;
-using NuGet.Versioning;
 
 namespace Microsoft.DotNet.ProjectModel.Graph
 {

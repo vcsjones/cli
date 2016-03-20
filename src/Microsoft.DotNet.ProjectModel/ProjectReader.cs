@@ -487,7 +487,6 @@ namespace Microsoft.DotNet.ProjectModel
             };
 
             var frameworkDependencies = new List<LibraryRange>();
-
             PopulateDependencies(
                 project.ProjectFilePath,
                 frameworkDependencies,
@@ -503,8 +502,8 @@ namespace Microsoft.DotNet.ProjectModel
                 "frameworkAssemblies",
                 isGacOrFrameworkReference: true);
 
-            frameworkDependencies.AddRange(frameworkAssemblies);
             targetFrameworkInformation.Dependencies = frameworkDependencies;
+            targetFrameworkInformation.FrameworkAssemblies = frameworkAssemblies;
 
             targetFrameworkInformation.WrappedProject = frameworkValue.ValueAsString("wrappedProject");
 

@@ -57,6 +57,15 @@ namespace Microsoft.DotNet.ProjectModel.Compilation
                     transform);
         }
 
+        public static LibraryAsset CreateFromAbsolutePath(string absolutePath, Action<Stream, Stream> transform = null)
+        {
+            return new LibraryAsset(
+                    Path.GetFileNameWithoutExtension(absolutePath),
+                    Path.GetFileName(absolutePath),
+                    absolutePath,
+                    transform);
+        }
+
         public static LibraryAsset CreateFromAbsolutePath(string basePath, string absolutePath, Action<Stream, Stream> transform = null)
         {
             var relativePath = absolutePath.Replace(PathUtility.EnsureTrailingSlash(basePath), string.Empty);

@@ -7,7 +7,6 @@ using System.IO;
 using System.Linq;
 using Microsoft.DotNet.ProjectModel.Graph;
 using Microsoft.DotNet.ProjectModel.Resolution;
-using Microsoft.Extensions.Internal;
 using NuGet.Frameworks;
 
 namespace Microsoft.DotNet.ProjectModel
@@ -80,12 +79,6 @@ namespace Microsoft.DotNet.ProjectModel
             return this;
         }
 
-        public ProjectContextBuilder WithReferenceAssembliesPath(string referenceAssembliesPath)
-        {
-            ReferenceAssembliesPath = referenceAssembliesPath;
-            return this;
-        }
-
         public ProjectContextBuilder WithPackagesDirectory(string packagesDirectory)
         {
             PackagesDirectory = packagesDirectory;
@@ -153,8 +146,6 @@ namespace Microsoft.DotNet.ProjectModel
 
             RootDirectory = GlobalSettings?.DirectoryPath ?? RootDirectory;
             PackagesDirectory = PackagesDirectory ?? PackageDependencyProvider.ResolvePackagesPath(RootDirectory, GlobalSettings);
-            ReferenceAssembliesPath = ReferenceAssembliesPath ?? FrameworkReferenceResolver.GetDefaultReferenceAssembliesPath();
-            var frameworkReferenceResolver = new FrameworkReferenceResolver(ReferenceAssembliesPath);
 
             LockFileLookup lockFileLookup = null;
             EnsureProjectLoaded();
@@ -174,7 +165,7 @@ namespace Microsoft.DotNet.ProjectModel
                 lockFileLookup = new LockFileLookup(LockFile);
             }
 
-            var libraries = new Dictionary<LibraryKey, LibraryDescription>();
+            var libraries = new Dictionary<string, LibraryDescription>();
             var projectResolver = new ProjectDependencyProvider(ProjectResolver);
 
             ProjectDescription mainProject = null;
@@ -183,7 +174,7 @@ namespace Microsoft.DotNet.ProjectModel
                 mainProject = projectResolver.GetDescription(TargetFramework, Project, targetLibrary: null);
 
                 // Add the main project
-                libraries.Add(new LibraryKey(mainProject.Identity.Name), mainProject);
+                libraries.Add(mainProject.Identity.Name, mainProject);
             }
 
             LockFileTarget target = null;
@@ -197,11 +188,8 @@ namespace Microsoft.DotNet.ProjectModel
                 }
             }
 
-            var referenceAssemblyDependencyResolver = new ReferenceAssemblyDependencyResolver(frameworkReferenceResolver);
-            bool requiresFrameworkAssemblies;
-
             // Resolve the dependencies
-            ResolveDependencies(libraries, referenceAssemblyDependencyResolver, out requiresFrameworkAssemblies);
+            ResolveDependencies(libraries);
 
             var diagnostics = new List<DiagnosticMessage>();
 
@@ -224,38 +212,6 @@ namespace Microsoft.DotNet.ProjectModel
                     DiagnosticMessageSeverity.Warning));
             }
 
-            if (requiresFrameworkAssemblies)
-            {
-                var frameworkInfo = Project.GetTargetFramework(TargetFramework);
-
-                if (string.IsNullOrEmpty(ReferenceAssembliesPath))
-                {
-                    // If there was an attempt to use reference assemblies but they were not installed
-                    // report an error
-                    diagnostics.Add(new DiagnosticMessage(
-                        ErrorCodes.DOTNET1012,
-                        $"The reference assemblies directory was not specified. You can set the location using the DOTNET_REFERENCE_ASSEMBLIES_PATH environment variable.",
-                        filePath: Project.ProjectFilePath,
-                        severity: DiagnosticMessageSeverity.Error,
-                        startLine: frameworkInfo.Line,
-                        startColumn: frameworkInfo.Column
-                    ));
-                }
-                else if (!frameworkReferenceResolver.IsInstalled(TargetFramework))
-                {
-                    // If there was an attempt to use reference assemblies but they were not installed
-                    // report an error
-                    diagnostics.Add(new DiagnosticMessage(
-                        ErrorCodes.DOTNET1011,
-                        $"Framework not installed: {TargetFramework.DotNetFrameworkName} in {ReferenceAssembliesPath}",
-                        filePath: Project.ProjectFilePath,
-                        severity: DiagnosticMessageSeverity.Error,
-                        startLine: frameworkInfo.Line,
-                        startColumn: frameworkInfo.Column
-                    ));
-                }
-            }
-
             // Create a library manager
             var libraryManager = new LibraryManager(libraries.Values.ToList(), diagnostics, Project?.ProjectFilePath);
 
@@ -269,71 +225,22 @@ namespace Microsoft.DotNet.ProjectModel
                 LockFile);
         }
 
-        private void ResolveDependencies(Dictionary<LibraryKey, LibraryDescription> libraries,
-                                         ReferenceAssemblyDependencyResolver referenceAssemblyDependencyResolver,
-                                         out bool requiresFrameworkAssemblies)
+        private void ResolveDependencies(Dictionary<string, LibraryDescription> libraries)
         {
-            // Remark: the LibraryType in the key of the given dictionary are all "Unspecified" at the beginning.
-            requiresFrameworkAssemblies = false;
-
-            foreach (var pair in libraries.ToList())
-            {
-                var library = pair.Value;
-
-                // The System.* packages provide placeholders on any non netstandard platform 
-                // To make them work seamlessly on those platforms, we fill the gap with a reference
-                // assembly (if available)
-                var package = library as PackageDescription;
-                if (package != null && package.Resolved && !package.CompileTimeAssemblies.Any())
-                {
-                    var replacement = referenceAssemblyDependencyResolver.GetDescription(new LibraryRange(library.Identity.Name, LibraryType.ReferenceAssembly), TargetFramework);
-                    if (replacement?.Resolved == true)
-                    {
-                        requiresFrameworkAssemblies = true;
-
-                        // Remove the original package reference
-                        libraries.Remove(pair.Key);
-
-                        // Insert a reference assembly key if there isn't one
-                        var key = new LibraryKey(replacement.Identity.Name, LibraryType.ReferenceAssembly);
-                        if (!libraries.ContainsKey(key))
-                        {
-                            libraries[key] = replacement;
-                        }
-                    }
-                }
-            }
-
             foreach (var pair in libraries.ToList())
             {
                 var library = pair.Value;
                 library.Framework = library.Framework ?? TargetFramework;
+
                 foreach (var dependency in library.Dependencies)
                 {
-                    var keyType = dependency.Target == LibraryType.ReferenceAssembly ?
-                                  LibraryType.ReferenceAssembly :
-                                  LibraryType.Unspecified;
-
-                    var key = new LibraryKey(dependency.Name, keyType);
-
                     LibraryDescription dependencyDescription;
-                    if (!libraries.TryGetValue(key, out dependencyDescription))
+                    if (!libraries.TryGetValue(dependency.Name, out dependencyDescription))
                     {
-                        if (keyType == LibraryType.ReferenceAssembly)
-                        {
-                            // a dependency is specified to be reference assembly but fail to match
-                            // then add a unresolved dependency
-                            dependencyDescription = referenceAssemblyDependencyResolver.GetDescription(dependency, TargetFramework) ??
-                                                    UnresolvedDependencyProvider.GetDescription(dependency, TargetFramework);
-                            libraries[key] = dependencyDescription;
-                        }
-                        else if (!libraries.TryGetValue(new LibraryKey(dependency.Name, LibraryType.ReferenceAssembly), out dependencyDescription))
-                        {
-                            // a dependency which type is unspecified fails to match, then try to find a 
-                            // reference assembly type dependency
-                            dependencyDescription = UnresolvedDependencyProvider.GetDescription(dependency, TargetFramework);
-                            libraries[key] = dependencyDescription;
-                        }
+                        // a dependency which type is unspecified fails to match, then try to find a 
+                        // reference assembly type dependency
+                        dependencyDescription = UnresolvedDependencyProvider.GetDescription(dependency, TargetFramework);
+                        libraries[dependency.Name] = dependencyDescription;
                     }
 
                     dependencyDescription.RequestedRanges.Add(dependency);
@@ -342,7 +249,11 @@ namespace Microsoft.DotNet.ProjectModel
             }
         }
 
-        private void ScanLibraries(LockFileTarget target, LockFileLookup lockFileLookup, Dictionary<LibraryKey, LibraryDescription> libraries, PackageDependencyProvider packageResolver, ProjectDependencyProvider projectDependencyProvider)
+        private void ScanLibraries(LockFileTarget target, 
+                                   LockFileLookup lockFileLookup, 
+                                   Dictionary<string, LibraryDescription> libraries, 
+                                   PackageDependencyProvider packageResolver, 
+                                   ProjectDependencyProvider projectDependencyProvider)
         {
             foreach (var library in target.Libraries)
             {
@@ -375,7 +286,7 @@ namespace Microsoft.DotNet.ProjectModel
 
                 description = description ?? UnresolvedDependencyProvider.GetDescription(new LibraryRange(library.Name, type), target.TargetFramework);
 
-                libraries.Add(new LibraryKey(library.Name), description);
+                libraries.Add(library.Name, description);
             }
         }
 
@@ -431,44 +342,6 @@ namespace Microsoft.DotNet.ProjectModel
             return File.Exists(projectLockJsonPath) ?
                         LockFileReader.Read(Path.Combine(projectDir, LockFile.FileName)) :
                         null;
-        }
-
-        private struct LibraryKey
-        {
-            public LibraryKey(string name) : this(name, LibraryType.Unspecified)
-            {
-            }
-
-            public LibraryKey(string name, LibraryType libraryType)
-            {
-                Name = name;
-                LibraryType = libraryType;
-            }
-
-            public string Name { get; }
-            public LibraryType LibraryType { get; }
-
-            public override bool Equals(object obj)
-            {
-                var otherKey = (LibraryKey)obj;
-
-                return string.Equals(otherKey.Name, Name, StringComparison.Ordinal) &&
-                    otherKey.LibraryType.Equals(LibraryType);
-            }
-
-            public override int GetHashCode()
-            {
-                var combiner = new HashCodeCombiner();
-                combiner.Add(Name);
-                combiner.Add(LibraryType);
-
-                return combiner.CombinedHash;
-            }
-            
-            public override string ToString()
-            {
-                return Name + " " + LibraryType;
-            }
         }
     }
 }

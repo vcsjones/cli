@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 
 namespace Microsoft.DotNet.ProjectModel.Graph
 {
@@ -10,7 +9,6 @@ namespace Microsoft.DotNet.ProjectModel.Graph
     {
         public static readonly LibraryType Package = new LibraryType(nameof(Package));
         public static readonly LibraryType Project = new LibraryType(nameof(Project));
-        public static readonly LibraryType ReferenceAssembly = new LibraryType(nameof(ReferenceAssembly));
 
         // Default value
         public static readonly LibraryType Unspecified = new LibraryType();
@@ -46,12 +44,7 @@ namespace Microsoft.DotNet.ProjectModel.Graph
 
         public bool CanSatisfyConstraint(LibraryType constraint)
         {
-            // Reference assemblies must be explicitly asked for
-            if (Equals(ReferenceAssembly, constraint))
-            {
-                return Equals(ReferenceAssembly, this);
-            }
-            else if (Equals(constraint, Unspecified))
+            if (Equals(constraint, Unspecified))
             {
                 return true;
             }

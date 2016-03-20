@@ -48,26 +48,6 @@ namespace Microsoft.DotNet.ProjectModel.Resolution
 
             // Add all of the project's dependencies
             dependencies.AddRange(project.Dependencies);
-
-            if (targetFramework != null && targetFramework.IsDesktop())
-            {
-                dependencies.Add(new LibraryRange("mscorlib", LibraryType.ReferenceAssembly, LibraryDependencyType.Build));
-
-                dependencies.Add(new LibraryRange("System", LibraryType.ReferenceAssembly, LibraryDependencyType.Build));
-
-                if (targetFramework.Version >= new Version(3, 5))
-                {
-                    dependencies.Add(new LibraryRange("System.Core", LibraryType.ReferenceAssembly, LibraryDependencyType.Build));
-
-                    if (targetFramework.Version >= new Version(4, 0))
-                    {
-                        if (!dependencies.Any(dep => string.Equals(dep.Name, "Microsoft.CSharp", StringComparison.OrdinalIgnoreCase)))
-                        {
-                            dependencies.Add(new LibraryRange("Microsoft.CSharp", LibraryType.ReferenceAssembly, LibraryDependencyType.Build));
-                        }
-                    }
-                }
-            }
             
             if (targetLibrary != null)
             {
@@ -75,7 +55,7 @@ namespace Microsoft.DotNet.ProjectModel.Resolution
                 var lockFileDependencies = targetLibrary.Dependencies.ToDictionary(d => d.Id);
 
                 // Remove all non-framework dependencies that don't appear in the lock file entry
-                dependencies.RemoveAll(m => !lockFileDependencies.ContainsKey(m.Name) && m.Target != LibraryType.ReferenceAssembly);
+                dependencies.RemoveAll(m => !lockFileDependencies.ContainsKey(m.Name));
             }
 
             // Mark the library as unresolved if there were specified frameworks

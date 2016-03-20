@@ -5,8 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata;
-using System.Reflection.PortableExecutable;
 using Microsoft.DotNet.ProjectModel.Graph;
 using NuGet.Frameworks;
 using NuGet.Packaging;
@@ -43,13 +41,6 @@ namespace Microsoft.DotNet.ProjectModel.Resolution
             var path = _packagePathResolver.GetInstallPath(package.Name, package.Version);
             var exists = Directory.Exists(path);
 
-            if (exists)
-            {
-                // If the package's compile time assemblies is for a portable profile then, read the assembly metadata
-                // and turn System.* references into reference assembly dependencies
-                PopulateLegacyPortableDependencies(targetFramework, dependencies, path, targetLibrary);
-            }
-
             var packageDescription = new PackageDescription(
                 path,
                 package,
@@ -59,69 +50,6 @@ namespace Microsoft.DotNet.ProjectModel.Resolution
                 resolved: compatible && exists);
 
             return packageDescription;
-        }
-
-        private void PopulateLegacyPortableDependencies(NuGetFramework targetFramework, List<LibraryRange> dependencies, string packagePath, LockFileTargetLibrary targetLibrary)
-        {
-            var seen = new HashSet<string>();
-
-            foreach (var assembly in targetLibrary.CompileTimeAssemblies)
-            {
-                if (IsPlaceholderFile(assembly))
-                {
-                    continue;
-                }
-
-                // (ref/lib)/{tfm}/{assembly}
-                var pathParts = assembly.Path.Split(Path.DirectorySeparatorChar);
-
-                if (pathParts.Length != 3)
-                {
-                    continue;
-                }
-
-                var assemblyTargetFramework = NuGetFramework.Parse(pathParts[1]);
-
-                if (!assemblyTargetFramework.IsPCL)
-                {
-                    continue;
-                }
-
-                var assemblyPath = Path.Combine(packagePath, assembly.Path);
-
-                foreach (var dependency in GetDependencies(assemblyPath))
-                {
-                    if (seen.Add(dependency))
-                    {
-                        string path;
-                        Version version;
-
-                        // If there exists a reference assembly on the requested framework with the same name then turn this into a
-                        // framework assembly dependency
-                        if (_frameworkReferenceResolver.TryGetAssembly(dependency, targetFramework, out path, out version))
-                        {
-                            dependencies.Add(new LibraryRange(dependency,
-                                LibraryType.ReferenceAssembly,
-                                LibraryDependencyType.Build));
-                        }
-                    }
-                }
-            }
-        }
-
-        private static IEnumerable<string> GetDependencies(string path)
-        {
-            using (var peReader = new PEReader(File.OpenRead(path)))
-            {
-                var metadataReader = peReader.GetMetadataReader();
-
-                foreach (var assemblyReferenceHandle in metadataReader.AssemblyReferences)
-                {
-                    var assemblyReference = metadataReader.GetAssemblyReference(assemblyReferenceHandle);
-
-                    yield return metadataReader.GetString(assemblyReference.Name);
-                }
-            }
         }
 
         private void PopulateDependencies(
@@ -136,18 +64,6 @@ namespace Microsoft.DotNet.ProjectModel.Resolution
                     dependency.VersionRange,
                     LibraryType.Unspecified,
                     LibraryDependencyType.Default));
-            }
-
-            if (!targetFramework.IsPackageBased)
-            {
-                // Only add framework assemblies for non-package based frameworks.
-                foreach (var frameworkAssembly in targetLibrary.FrameworkAssemblies)
-                {
-                    dependencies.Add(new LibraryRange(
-                        frameworkAssembly,
-                        LibraryType.ReferenceAssembly,
-                        LibraryDependencyType.Default));
-                }
             }
         }
 
