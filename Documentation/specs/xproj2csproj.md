@@ -18,6 +18,11 @@
  
 ## Proposed data formats
 
+**A fragment export object will:**
+- have the same format as a lock file target library (representable by a LockFileTargetLibrary)
+- will never contain dependencies. Those are already in the lock file
+- only has assets
+
 project.json
 ```json
 ﻿{
@@ -87,11 +92,6 @@ Fragment file:
 	}
 }
 ```
-
-An export object will:
-- have the same format as a lock file target library (representable by a LockFileTargetLibrary)
-- will never contain dependencies. Those are already in the lock file
-- only has assets
 
 Main lock file:
 
