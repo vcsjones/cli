@@ -17,33 +17,74 @@
 3. __dotnet build__ builds.
  
 ## Proposed data formats
-Fragment file:
+
+project.json
 ```json
-{
-  "version" : 2,
-  "targets" : {
-    "tfm/rid":{
-      "ClassLibrary1/1.0.0": {
-        "type": "project",
-        "framework": "tfm",
-        "compile": {
-          "bin/{config}/ClassLibrary1.dll": {}
-        },
-        "runtime": {
-          "c:/...bin/Debug/ClassLibrary1.dll": {},
-          "c:/../../packages/PackageName1/lib/net451/PackageConfigAssembly1.dll": {},
-          "c:/../../packages/PackageName2/lib/451/PackageConfigAssembly1.dll": {},
-          "c:/../../../somepath/LooseAssemblyReference1.dll" : {}
+﻿{
+    "version": "1.0.0-*",
+    "compilationOptions": {
+        "emitEntryPoint": true
+    },
+
+    "dependencies": {
+
+    },
+
+    "frameworks": {
+      "net46": {
+        "dependencies": {
+          "ClassLibrary1": {
+            "target": "msbuildProject"
+          },
+          "ClassLibrary2": {
+            "target": "msbuildProject"
+          },
+          "ClassLibrary3": {
+            "target": "msbuildProject"
+          }
         }
       }
     }
-  },
-  "libraries" : {
-    "ClassLibrary1/1.0.0": {
-      "type": "project",
-      "msbuildProject" : "C:/.../path/to/.csproj"
-    }
-  }
+}
+
+```
+
+Fragment file:
+```json
+{
+	"version": 2,
+	"exports": {
+		"ClassLibrary1/1.0.0": {
+			"type": "msbuildProject",
+			"framework": ".NETFramework,Version=v4.5.2",
+			"compile": {
+				"bin/Debug/ClassLibrary1.dll": {}
+			},
+			"runtime": {
+				"bin/Debug/ClassLibrary1.dll": {}
+			}
+		},
+		"ClassLibrary2/1.0.0": {
+			"type": "msbuildProject",
+			"framework": ".NETFramework,Version=v4.6",
+			"compile": {
+				"../../bin/Debug/ClassLibrary2.dll": {}
+			},
+			"runtime": {
+				"bin/Debug/ClassLibrary2.dll": {}
+			}
+		},
+		"ClassLibrary3/1.0.0": {
+			"type": "msbuildProject",
+			"framework": ".NETFramework,Version=v4.6",
+			"compile": {
+				"c:/bin/Debug/ClassLibrary3.dll": {}
+			},
+			"runtime": {
+				"bin/Debug/ClassLibrary3.dll": {}
+			}
+		}
+	}
 }
 ```
 
@@ -51,25 +92,68 @@ Main lock file:
 
 ```json
 {
-  "version" : 2,
-  "targets" : {
-    "tfm/rid":{
-      "..." : "...",
-      "ClassLibrary1/1.0.0": {
-        "type": "project",
-        "dependencies": "// if there's a project.json in the csproj project; or from packages.config"
-      },
-      "..." : "..."
-    }
-  },
-  "libraries" : {
-    "..." : "...",
-    "ClassLibrary1/1.0.0": {
-      "type" : "project",
-      "msbuildProject" : "C:/.../path/to/.csproj"
-    },
-    "..." : "..."
-  }
+	"locked": false,
+	"version": 2,
+	"targets": {
+		".NETFramework,Version=v4.6": {
+			"ClassLibrary1/1.0.0": {
+				"type": "msbuildProject"
+			},
+			"ClassLibrary2/1.0.0": {
+				"type": "msbuildProject"
+			},
+			"ClassLibrary3/1.0.0": {
+				"type": "msbuildProject"
+			}
+		},
+		".NETFramework,Version=v4.6/win7-x64": {
+			"ClassLibrary1/1.0.0": {
+				"type": "msbuildProject"
+			},
+			"ClassLibrary2/1.0.0": {
+				"type": "msbuildProject"
+			},
+			"ClassLibrary3/1.0.0": {
+				"type": "msbuildProject"
+			}
+		},
+		".NETFramework,Version=v4.6/win7-x86": {
+			"ClassLibrary1/1.0.0": {
+				"type": "msbuildProject"
+			},
+			"ClassLibrary2/1.0.0": {
+				"type": "msbuildProject"
+			},
+			"ClassLibrary3/1.0.0": {
+				"type": "msbuildProject"
+			}
+		}
+	},
+	"libraries": {
+		"ClassLibrary1/1.0.0": {
+			"type": "msbuildProject",
+			"msbuildProject": "../../ClassLibrary1/ClassLibrary1.csproj"
+		},
+		"ClassLibrary2/1.0.0": {
+			"type": "msbuildProject",
+			"msbuildProject": "../../ClassLibrary2/ClassLibrary2.csproj"
+		},
+		"ClassLibrary3/1.0.0": {
+			"type": "msbuildProject",
+			"msbuildProject": "../../ClassLibrary3/ClassLibrary3.csproj"
+		}
+	},
+	"projectFileDependencyGroups": {
+		"": [],
+		".NETFramework,Version=v4.6": [
+			"ClassLibrary1",
+			"ClassLibrary2",
+			"ClassLibrary3"
+		],
+		".NETStandardApp,Version=v1.5": [
+			"NETStandard.Library >= 1.0.0-rc2-23826"
+		]
+	}
 }
 ```
 
