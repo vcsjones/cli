@@ -100,3 +100,13 @@ Ideally a new library type has to be introduced ("legacyProject"). This describe
     - how is the csproj dependency cone resolved against the main lock file dependency cone? (A_xproj -> B_csproj -> C_xproj). How is C's cone of locally resolved dependencies merged with A's cone of locally resolved dependencies?
 - fragment format / CLI design: what library type should csproj library dependencies appear as?
 
+## Discussion topics:
+
+```
+David's view:
+- The fragment file is never a true lock file, it has no targets.
+- The lock file has holes that need to be filed.
+- Compatibility needs worked out by nuget not by the merging
+- These types of projects need to be identified separately, "legacyProject" is a bad name. "msbuildProject" is better.
+
+```
