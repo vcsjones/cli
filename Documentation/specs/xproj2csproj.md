@@ -19,9 +19,10 @@
 ## Proposed data formats
 
 **A fragment export object will:**
+- be unique in terms of name / version
 - have the same format as a lock file target library (representable by a LockFileTargetLibrary)
-- will never contain dependencies. Those are already in the lock file
-- only has assets
+- will never contain dependencies. Those are already in the lock file libraries
+- only has asset elements
 
 project.json
 ```json
@@ -164,31 +165,17 @@ Main lock file:
 
 ## Merging logic
 
-- option A: fragment lock file has the same format as the lock file and merging is structural (fragment/tfm1/rid1/ProjectFoo overwrites main/tfm1/rid1/ProjectFoo)
-    - PROs:
-        - transparent for all clients that consume the lock file
-        - encapsulates dependency graph resolution in Nuget.
-        - reduces many "across tool-chain" bugs
-    - CONs
-        - Nuget and Nuget MSBuild tasks have to be smarter about legacy projects and how to resolve their dependency cones (what is compatible with what, when should restore exit with error, etc)
-- option B: fragment lock file is structurally and semantically different feom the lock file, and clients need to finish dependency resolution on their own
-    - PROs:
-        - 
-    - CONs
-        - force each client to re-implement part of nuget's dependency resolution logic. It means that whenever nuget changes, clients break and misbehave.
+- for each export in the fragment, add its assets elements to all the library occurences in the lock file (key = name + version).
+- Compatibility checks:
+    - exit with error if
+        - type does not match
+        - tfm in lock file is null (this means that restore could not resolve the dependency due to framework / runtime missmatches)
+        - there are csproj libraries in lock file that do not have a corresponding export
 
 ## CLI project model changes
 The msbuild projects cannot be represeted as PackageDescription CLI objects. PackageDescription leaks a Project object which wraps over project.json. The whole CLI codebase took a dependency on the assumption that PackageDescription.Package is project.json.
 
-Ideally a new library type has to be introduced ("legacyProject"). This describes projects that provide their assets up front, just like packages. The only difference from nuget packages is that legacy projects resolve their asset path from the project root, not from the nuget package cache.
-
-## Unresolved issues
-- framework / runtime compatibility issues: 
-    - what happens if main lock file shows csproj ProjectA as targeting framework Foo, but the fragment shows ProjectA as targetting framework Bar
-    - same as above but for runtimes
-    - Does the csproj have explicit dependencies? Then how is the csproj dependency cone resolved against the main lock file dependency cone? (A_xproj -> B_csproj -> C_xproj). How is C's cone of locally resolved dependencies merged with A's cone of locally resolved dependencies? 
-- fragment format / CLI design: what library type should csproj library dependencies appear as?
-    - what are the valid elements for a csproj dependency in project.json, and lock file? 
+Solution: introduce a new library type, "msbuildProject". Update all code that switches on LibraryDescription and / or does casting.
 
 ## Discussion topics:
 
