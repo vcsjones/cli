@@ -98,3 +98,4 @@ Ideally a new library type has to be introduced ("legacyProject"). This describe
     - what happens if main lock file shows csproj ProjectA as targeting framework Foo, but the fragment shows ProjectA as targetting framework Bar
     - same as above but for runtimes
 - fragment format / CLI design: what library type should csproj library dependencies appear as?
+- how is the csproj dependency cone resolved against the main lock file dependency cone? (A_xproj -> B_csproj -> C_xproj). How is C's cone of locally resolved dependencies merged with A's cone of locally resolved dependencies?
