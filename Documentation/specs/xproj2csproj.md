@@ -99,6 +99,7 @@ Ideally a new library type has to be introduced ("legacyProject"). This describe
     - same as above but for runtimes
     - Does the csproj have explicit dependencies? Then how is the csproj dependency cone resolved against the main lock file dependency cone? (A_xproj -> B_csproj -> C_xproj). How is C's cone of locally resolved dependencies merged with A's cone of locally resolved dependencies? 
 - fragment format / CLI design: what library type should csproj library dependencies appear as?
+    - what are the valid elements for a csproj dependency in project.json, and lock file? 
 
 ## Discussion topics:
 
