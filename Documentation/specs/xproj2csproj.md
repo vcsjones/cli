@@ -41,13 +41,13 @@ project.json
       "net46": {
         "dependencies": {
           "ClassLibrary1": {
-            "target": "msbuildProject"
+            "target": "project"
           },
           "ClassLibrary2": {
-            "target": "msbuildProject"
+            "target": "project"
           },
           "ClassLibrary3": {
-            "target": "msbuildProject"
+            "target": "project"
           }
         }
       }
