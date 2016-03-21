@@ -76,4 +76,19 @@ Main lock file:
 ## Merging logic
 
 - option A: fragment lock file has the same format as the lock file and merging is structural (fragment/tfm1/rid1/ProjectFoo overwrites main/tfm1/rid1/ProjectFoo)
-- option B: fragment lock file has a different structural and merging is semantic
+ - PROs:
+  - transparent for all clients that consume the lock file
+  - encapsulates dependency graph resolution in Nuget.
+  - reduces many "across tool-chain" bugs
+ - CONs
+  - Nuget and Nuget MSBuild tasks have to be smarter about legacy projects and how to resolve their dependency cones (what is compatible with what, when should restore exit with error, etc)
+  
+- option B: fragment lock file is structurally and semantically different feom the lock file, and clients need to finish dependency resolution on their own
+ - PROs
+  - 
+ - CONs
+  - force each client to re-implement part of nuget's dependency resolution logic. It means that whenever nuget changes, clients break and misbehave.
+  - 
+  
+
+
