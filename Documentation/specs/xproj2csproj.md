@@ -22,7 +22,7 @@ Fragment file:
 {
   "version" : 2,
   "targets" : {
-    "tfm":{
+    "tfm/rid":{
       "ClassLibrary1/1.0.0": {
         "type": "project",
         "framework": "tfm",
@@ -53,7 +53,7 @@ Main lock file:
 {
   "version" : 2,
   "targets" : {
-    "tfm":{
+    "tfm/rid":{
       "..." : "...",
       "ClassLibrary1/1.0.0": {
         "type": "project",
