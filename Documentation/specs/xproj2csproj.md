@@ -72,3 +72,8 @@ Main lock file:
   }
 }
 ```
+
+## Merging logic
+
+- option A: fragment lock file has the same format as the lock file and merging is structural (fragment/tfm1/rid1/ProjectFoo overwrites main/tfm1/rid1/ProjectFoo)
+- option B: fragment lock file has a different structural and merging is semantic
