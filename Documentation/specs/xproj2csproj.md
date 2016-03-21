@@ -15,3 +15,60 @@
 1. __dotnet build__ looks at the lock file and realizes that it has csproj dependencies.
 2. __dotnet build__ looks for the __project.fragment.lock.json__ at the same folder as __project.lock.json__
 3. __dotnet build__ builds.
+ 
+## Proposed data formats
+Fragment file:
+```json
+{
+  "version" : 2,
+  "targets" : {
+    "tfm":{
+      "ClassLibrary1/1.0.0": {
+        "type": "project",
+        "framework": "tfm",
+        "compile": {
+          "bin/{config}/ClassLibrary1.dll": {}
+        },
+        "runtime": {
+          "c:/...bin/Debug/ClassLibrary1.dll": {},
+          "c:/../../packages/PackageName1/lib/net451/PackageConfigAssembly1.dll": {},
+          "c:/../../packages/PackageName2/lib/451/PackageConfigAssembly1.dll": {},
+          "c:/../../../somepath/LooseAssemblyReference1.dll" : {}
+        }
+      }
+    }
+  },
+  "libraries" : {
+    "ClassLibrary1/1.0.0": {
+      "type": "project",
+      "msbuildProject" : "C:/.../path/to/.csproj"
+    }
+  }
+}
+```
+
+Main lock file:
+
+```json
+{
+  "version" : 2,
+  "targets" : {
+    "tfm":{
+      "..." : "...",
+      "ClassLibrary1/1.0.0": {
+        "type": "project",
+        "dependencies": "// if there's a project.json in the csproj project; or from packages.config"
+      },
+      "..." : "..."
+    }
+  },
+  "libraries" : {
+    "..." : "...",
+    "ClassLibrary1/1.0.0": {
+      "type" : "project",
+      "msbuildProject" : "C:/.../path/to/.csproj"
+    },
+    "..." : "..."
+  }
+}
+```
