@@ -23,6 +23,7 @@
 - have the same format as a lock file target library (representable by a LockFileTargetLibrary)
 - will never contain dependencies. Those are already in the lock file libraries
 - only has asset elements
+- all paths are relative to the csproj location
 
 project.json
 ```json
@@ -64,10 +65,10 @@ Fragment file:
 			"type": "msbuildProject",
 			"framework": ".NETFramework,Version=v4.5.2",
 			"compile": {
-				"bin/Debug/ClassLibrary1.dll": {}
+				"../bin/Debug/ClassLibrary1.dll": {}
 			},
 			"runtime": {
-				"bin/Debug/ClassLibrary1.dll": {}
+				"../bin/Debug/ClassLibrary1.dll": {}
 			}
 		},
 		"ClassLibrary2/1.0.0": {
@@ -77,17 +78,17 @@ Fragment file:
 				"../../bin/Debug/ClassLibrary2.dll": {}
 			},
 			"runtime": {
-				"bin/Debug/ClassLibrary2.dll": {}
+				"../bin/Debug/ClassLibrary2.dll": {}
 			}
 		},
 		"ClassLibrary3/1.0.0": {
 			"type": "msbuildProject",
 			"framework": ".NETFramework,Version=v4.6",
 			"compile": {
-				"c:/bin/Debug/ClassLibrary3.dll": {}
+				"../bin/Debug/ClassLibrary3.dll": {}
 			},
 			"runtime": {
-				"bin/Debug/ClassLibrary3.dll": {}
+				"../bin/Debug/ClassLibrary3.dll": {}
 			}
 		}
 	}
