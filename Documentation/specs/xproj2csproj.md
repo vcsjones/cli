@@ -92,3 +92,8 @@ Main lock file:
 The msbuild projects cannot be represeted as PackageDescription CLI objects. PackageDescription leaks a Project object which wraps over project.json. The whole CLI codebase took a dependency on the assumption that PackageDescription.Package is project.json.
 
 Ideally a new library type has to be introduced ("legacyProject"). This describes projects that provide their assets up front, just like packages. The only difference from nuget packages is that legacy projects resolve their asset path from the project root, not from the nuget package cache.
+
+## Unresolved issues
+- fragment format: what happens if main lock file shows csproj ProjectA as targeting framework Foo, but the fragment shows ProjectA as targetting framework Bar
+- fragment format: same as above but for runtimes
+- fragment format / CLI design: what library type should csproj library dependencies appear as?
