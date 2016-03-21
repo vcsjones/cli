@@ -10,11 +10,11 @@
 6. __WTE__ walk down the entire msbuild project graph. For each csproj file it reachs it generates a __fragment lock file__.
 7. After all the __fragment lock files__ are generated, these files are aggregrated into one __project.fragments.lock.json__ file by __WTE__. It placed at the same place as project A's __project.json__.
 
-## Scenario: Build
+## Scenario: dotnet Build
 
-1. __dotnet build__ looks at the lock file and realizes that it has csproj dependencies.
-2. __dotnet build__ looks for the __project.fragment.lock.json__ at the same folder as __project.lock.json__
-3. __dotnet build__ builds.
+1. CLI looks for a fragment file whenever the lock file is read. If one is there, it does the merge in memory.
+2. Upstream code should not care about merging anymore.
+2. __dotnet build --no-dependencies__ works as usual.
  
 ## Proposed data formats
 
