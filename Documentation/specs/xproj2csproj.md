@@ -170,7 +170,7 @@ Main lock file:
 - Compatibility checks:
     - exit with error if
         - type does not match
-        - tfm in lock file is null (this means that restore could not resolve the dependency due to framework / runtime missmatches)
+        - tfm in fragment export is null (this means that restore could not resolve the dependency due to framework / runtime missmatches)
         - there are csproj libraries in lock file that do not have a corresponding export
 
 ## CLI project model changes
