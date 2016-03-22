@@ -174,9 +174,9 @@ Main lock file:
         - there are csproj libraries in lock file that do not have a corresponding export
 
 ## CLI project model changes
-The msbuild projects cannot be represeted as PackageDescription CLI objects. PackageDescription leaks a Project object which wraps over project.json. The whole CLI codebase took a dependency on the assumption that PackageDescription.Package is project.json.
+The msbuild projects cannot be represeted as ProjectDescription CLI objects. ProjectDescription leaks a Project object which wraps over project.json. The whole CLI codebase took a dependency on the assumption that ProjectDescription.Package is project.json.
 
-Solution: introduce a new library type, "msbuildProject". Update all code that switches on LibraryDescription and / or does casting.
+Solution: introduce a new library type, "msbuildProject". Update all code that switches on LibraryDescription and / or does casting. This new type behaves very similar to a package. 
 
 ## Discussion topics:
 
