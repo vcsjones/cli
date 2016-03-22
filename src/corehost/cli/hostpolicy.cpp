@@ -61,7 +61,7 @@ int run(const corehost_init_t* init, const runtime_config_t& config, const argum
         "NATIVE_DLL_SEARCH_DIRECTORIES",
         "PLATFORM_RESOURCE_ROOTS",
         "AppDomainCompatSwitch",
-        "SERVER_GC",
+        "System.GC.Server",
         // Workaround: mscorlib does not resolve symlinks for AppContext.BaseDirectory dotnet/coreclr/issues/2128
         "APP_CONTEXT_BASE_DIRECTORY",
         "APP_CONTEXT_DEPS_FILES"
@@ -74,7 +74,7 @@ int run(const corehost_init_t* init, const runtime_config_t& config, const argum
 
     // Workaround for dotnet/cli Issue #488 and #652
     pal::string_t server_gc;
-    std::string server_gc_cstr = (pal::getenv(_X("COREHOST_SERVER_GC"), &server_gc) && !server_gc.empty()) ? pal::to_stdstring(server_gc) : "0";
+    std::string server_gc_cstr = (pal::getenv(_X("COREHOST_SERVER_GC"), &server_gc) && !server_gc.empty()) ? pal::to_stdstring(server_gc) : "false";
     
     std::string deps = pal::to_stdstring(resolver.get_deps_file() + _X(";") + resolver.get_fx_deps_file());
 
