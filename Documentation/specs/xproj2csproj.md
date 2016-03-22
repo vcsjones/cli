@@ -169,9 +169,9 @@ Main lock file:
 - for each export in the fragment, add its assets elements to all the library occurences in the lock file (key = name + version).
 - Compatibility checks:
     - exit with error if
-        - type does not match
-        - tfm in fragment export is null (this means that restore could not resolve the dependency due to framework / runtime missmatches)
-        - there are csproj libraries in lock file that do not have a corresponding export
+        - library type does not match export type
+        - export tfm is null (this means that restore could not resolve the dependency due to framework / runtime missmatches)
+        - there are msbuild libraries in lock file that do not have a corresponding export
 
 ## CLI project model changes
 The msbuild projects cannot be represeted as ProjectDescription CLI objects. ProjectDescription leaks a Project object which wraps over project.json. The whole CLI codebase took a dependency on the assumption that ProjectDescription.Package is project.json.
