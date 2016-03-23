@@ -170,7 +170,7 @@ Main lock file:
 - Compatibility checks:
     - exit with error if
         - library type does not match export type
-        - export tfm is null (this means that restore could not resolve the dependency due to framework / runtime missmatches)
+        - lock file project target library tfm is null (this means that restore could not resolve the dependency due to framework / runtime missmatches)
         - there are msbuild libraries in lock file that do not have a corresponding export
 
 ## CLI project model changes
