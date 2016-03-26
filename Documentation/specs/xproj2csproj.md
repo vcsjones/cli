@@ -62,7 +62,7 @@ Fragment file:
 	"version": 2,
 	"exports": {
 		"ClassLibrary1/1.0.0": {
-			"type": "msbuildProject",
+			"type": "project",
 			"framework": ".NETFramework,Version=v4.5.2",
 			"compile": {
 				"../bin/Debug/ClassLibrary1.dll": {}
@@ -72,7 +72,7 @@ Fragment file:
 			}
 		},
 		"ClassLibrary2/1.0.0": {
-			"type": "msbuildProject",
+			"type": "project",
 			"framework": ".NETFramework,Version=v4.6",
 			"compile": {
 				"../../bin/Debug/ClassLibrary2.dll": {}
@@ -82,7 +82,7 @@ Fragment file:
 			}
 		},
 		"ClassLibrary3/1.0.0": {
-			"type": "msbuildProject",
+			"type": "project",
 			"framework": ".NETFramework,Version=v4.6",
 			"compile": {
 				"../bin/Debug/ClassLibrary3.dll": {}
@@ -104,49 +104,49 @@ Main lock file:
 	"targets": {
 		".NETFramework,Version=v4.6": {
 			"ClassLibrary1/1.0.0": {
-				"type": "msbuildProject"
+				"type": "project"
 			},
 			"ClassLibrary2/1.0.0": {
-				"type": "msbuildProject"
+				"type": "project"
 			},
 			"ClassLibrary3/1.0.0": {
-				"type": "msbuildProject"
+				"type": "project"
 			}
 		},
 		".NETFramework,Version=v4.6/win7-x64": {
 			"ClassLibrary1/1.0.0": {
-				"type": "msbuildProject"
+				"type": "project"
 			},
 			"ClassLibrary2/1.0.0": {
-				"type": "msbuildProject"
+				"type": "project"
 			},
 			"ClassLibrary3/1.0.0": {
-				"type": "msbuildProject"
+				"type": "project"
 			}
 		},
 		".NETFramework,Version=v4.6/win7-x86": {
 			"ClassLibrary1/1.0.0": {
-				"type": "msbuildProject"
+				"type": "project"
 			},
 			"ClassLibrary2/1.0.0": {
-				"type": "msbuildProject"
+				"type": "project"
 			},
 			"ClassLibrary3/1.0.0": {
-				"type": "msbuildProject"
+				"type": "project"
 			}
 		}
 	},
 	"libraries": {
 		"ClassLibrary1/1.0.0": {
-			"type": "msbuildProject",
+			"type": "project",
 			"msbuildProject": "../../ClassLibrary1/ClassLibrary1.csproj"
 		},
 		"ClassLibrary2/1.0.0": {
-			"type": "msbuildProject",
+			"type": "project",
 			"msbuildProject": "../../ClassLibrary2/ClassLibrary2.csproj"
 		},
 		"ClassLibrary3/1.0.0": {
-			"type": "msbuildProject",
+			"type": "project",
 			"msbuildProject": "../../ClassLibrary3/ClassLibrary3.csproj"
 		}
 	},
@@ -170,21 +170,10 @@ Main lock file:
 - Compatibility checks:
     - exit with error if
         - library type does not match export type
-        - lock file project target library tfm is null (this means that restore could not resolve the dependency due to framework / runtime missmatches)
         - there are msbuild libraries in lock file that do not have a corresponding export
+- dotnet restore is responsible with resolving TFM compatibility issues between csproj and xproj. If there are any, dotnet restore would fail.
 
 ## CLI project model changes
-The msbuild projects cannot be represeted as ProjectDescription CLI objects. ProjectDescription leaks a Project object which wraps over project.json. The whole CLI codebase took a dependency on the assumption that ProjectDescription.Package is project.json.
+The msbuild projects cannot be represeted as ProjectDescription CLI objects. 
+A new library type is required, "MSbuildProjectDescription". 
 
-Solution: introduce a new library type, "msbuildProject". Update all code that switches on LibraryDescription and / or does casting. This new type behaves very similar to a package. 
-
-## Discussion topics:
-
-```
-David's view:
-- The fragment file is never a true lock file, it has no targets.
-- The lock file has holes that need to be filed.
-- Compatibility needs worked out by nuget not by the merging
-- These types of projects need to be identified separately, "legacyProject" is a bad name. "msbuildProject" is better.
-
-```
