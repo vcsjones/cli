@@ -124,7 +124,7 @@ namespace Microsoft.DotNet.Cli.Build
             return c.Success();
         }
 
-        [Target(nameof(CleanTestPackages), nameof(CleanProductPackages))]
+        [Target(nameof(CleanTestPackages))]
         public static BuildTargetResult BuildTestAssetPackages(BuildTargetContext c)
         {
             CleanBinObj(c, Path.Combine(c.BuildContext.BuildDirectory, "TestAssets", "TestPackages"));
@@ -193,17 +193,6 @@ namespace Microsoft.DotNet.Cli.Build
                     .Execute()
                     .EnsureSuccessful();
             }
-
-            return c.Success();
-        }
-
-        [Target]
-        public static BuildTargetResult CleanProductPackages(BuildTargetContext c)
-        {
-            foreach (var packageName in PackageTargets.ProjectsToPack)
-            {
-                Rmdir(Path.Combine(Dirs.NuGetPackages, packageName));
-            }            
 
             return c.Success();
         }
