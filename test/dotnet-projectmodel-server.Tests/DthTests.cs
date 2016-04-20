@@ -648,6 +648,21 @@ namespace Microsoft.DotNet.ProjectModel.Server.Tests
             }
         }
 
+        [Fact]
+        public void TestDuplicateKeyInMusicStore()
+        {
+            var projectPath = Path.Combine(RepoRoot, "TestAssets", "ProjectModelServer", "MusicStoreError");
+
+            using (var server = new DthTestServer(_loggerFactory))
+            using (var client = new DthTestClient(server, _loggerFactory))
+            {
+                client.Initialize(projectPath);
+
+                var messages = client.DrainAllMessages();
+                PrintAllMessages(messages);
+            }
+        }
+
         private static string NormalizePathString(string original)
         {
             return original.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
