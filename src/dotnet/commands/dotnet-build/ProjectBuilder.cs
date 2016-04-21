@@ -6,27 +6,27 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.DotNet.ProjectModel;
 using NuGet.Frameworks;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace Microsoft.DotNet.Tools.Build
 {
     internal abstract class ProjectBuilder
     {
-        private Dictionary<ProjectContextIdentity, CompilationResult> _compilationResults = new Dictionary<ProjectContextIdentity, CompilationResult>();
+        private ConcurrentDictionary<ProjectContextIdentity, Task<CompilationResult>> _compilationResults =
+            new ConcurrentDictionary<ProjectContextIdentity, Task<CompilationResult>>();
 
         public IEnumerable<CompilationResult> Build(IEnumerable<ProjectGraphNode> roots)
         {
-            foreach (var projectNode in roots)
-            {
-                yield return Build(projectNode);
-            }
+            return Task.WhenAll(roots.Select(node => Build(node))).GetAwaiter().GetResult();
         }
 
         protected CompilationResult? GetCompilationResult(ProjectGraphNode projectNode)
         {
-            CompilationResult result;
+            Task<CompilationResult> result;
             if (_compilationResults.TryGetValue(projectNode.ProjectContext.Identity, out result))
             {
-                return result;
+                return result.GetAwaiter().GetResult();
             }
             return null;
         }
@@ -39,31 +39,20 @@ namespace Microsoft.DotNet.Tools.Build
         protected virtual void ProjectSkiped(ProjectGraphNode projectNode)
         {
         }
-        protected abstract CompilationResult RunCompile(ProjectGraphNode projectNode);
 
-        private CompilationResult Build(ProjectGraphNode projectNode)
+        protected abstract Task<CompilationResult> RunCompile(ProjectGraphNode projectNode);
+
+        private Task<CompilationResult> Build(ProjectGraphNode projectNode)
         {
-            CompilationResult result;
-            if (_compilationResults.TryGetValue(projectNode.ProjectContext.Identity, out result))
-            {
-                return result;
-            }
-            result = CompileWithDependencies(projectNode);
-
-            _compilationResults[projectNode.ProjectContext.Identity] = result;
-
-            return result;
+            return _compilationResults.GetOrAdd(projectNode.ProjectContext.Identity, i => CompileWithDependencies(projectNode));
         }
 
-        private CompilationResult CompileWithDependencies(ProjectGraphNode projectNode)
+        private async Task<CompilationResult> CompileWithDependencies(ProjectGraphNode projectNode)
         {
-            foreach (var dependency in projectNode.Dependencies)
+            var results = await Task.WhenAll(projectNode.Dependencies.Select(d => Build(d)));
+            if (results.Contains(CompilationResult.Failure))
             {
-                var result = Build(dependency);
-                if (result == CompilationResult.Failure)
-                {
-                    return CompilationResult.Failure;
-                }
+                return CompilationResult.Failure;
             }
 
             var context = projectNode.ProjectContext;
@@ -74,7 +63,7 @@ namespace Microsoft.DotNet.Tools.Build
 
             if (NeedsRebuilding(projectNode))
             {
-                return RunCompile(projectNode);
+                return await RunCompile(projectNode);
             }
             else
             {

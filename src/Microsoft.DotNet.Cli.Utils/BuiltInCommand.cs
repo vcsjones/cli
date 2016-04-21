@@ -51,16 +51,17 @@ namespace Microsoft.DotNet.Cli.Utils
                     // Reset the Reporters to the new Console Out and Error.
                     Reporter.Reset();
 
-                    Thread threadOut = _stdOut.BeginRead(new StreamReader(outStream));
-                    Thread threadErr = _stdErr.BeginRead(new StreamReader(errorStream));
+                    //Thread threadOut = _stdOut.BeginRead(new StreamReader(outStream));
+                    //Thread threadErr = _stdErr.BeginRead(new StreamReader(errorStream));
 
                     int exitCode = _builtInCommand(_commandArgs.ToArray());
 
-                    outStream.DoneWriting();
-                    errorStream.DoneWriting();
+                    //outStream.DoneWriting();
+                    //errorStream.DoneWriting();
 
-                    threadOut.Join();
-                    threadErr.Join();
+                    //Task.WhenAll(taskOut, taskErr);
+                    //threadOut.Join();
+                    //threadErr.Join();
              
                     // fake out a ProcessStartInfo using the Muxer command name, since this is a built-in command
                     ProcessStartInfo startInfo = new ProcessStartInfo(new Muxer().MuxerPath, $"{CommandName} {CommandArgs}");

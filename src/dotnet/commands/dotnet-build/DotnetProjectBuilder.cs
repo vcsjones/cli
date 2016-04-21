@@ -11,6 +11,7 @@ using Microsoft.DotNet.Cli.Utils;
 using Microsoft.DotNet.ProjectModel;
 using Microsoft.DotNet.Tools.Compiler;
 using Microsoft.Extensions.PlatformAbstractions;
+using System.Threading.Tasks;
 
 namespace Microsoft.DotNet.Tools.Build
 {
@@ -132,13 +133,13 @@ namespace Microsoft.DotNet.Tools.Build
             executable.MakeCompilationOutputRunnable();
         }
 
-        protected override CompilationResult RunCompile(ProjectGraphNode projectNode)
+        protected override async Task<CompilationResult> RunCompile(ProjectGraphNode projectNode)
         {
             try
             {
                 var managedCompiler = new ManagedCompiler(_scriptRunner, _commandFactory);
 
-                var success = managedCompiler.Compile(projectNode.ProjectContext, _args);
+                var success = await Task.Run(() => managedCompiler.Compile(projectNode.ProjectContext, _args));
                 if (projectNode.IsRoot)
                 {
                     MakeRunnable(projectNode);
