@@ -121,7 +121,7 @@ namespace Microsoft.DotNet.Tools.Compiler
                 IEnumerable<NuGetFramework> frameworks = null;
                 if (_frameworkOption.HasValue())
                 {
-                    frameworks = new [] { NuGetFramework.Parse(_frameworkOption.Value()) };
+                    frameworks = new [] { FrameworkNameHelper.Parse(_frameworkOption.Value()) };
                 }
                 var success = execute(files, frameworks, this);
 

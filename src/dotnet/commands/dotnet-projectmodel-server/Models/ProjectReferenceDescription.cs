@@ -25,7 +25,7 @@ namespace Microsoft.DotNet.ProjectModel.Server.Models
         }
 
         /// <summary>
-        /// Create a ProjectReferenceDescription from given LibraryDescription. If the library doesn't 
+        /// Create a ProjectReferenceDescription from given LibraryDescription. If the library doesn't
         /// represent a project reference returns null.
         /// </summary>
         public static ProjectReferenceDescription Create(LibraryDescription library)

@@ -10,7 +10,6 @@ using Microsoft.DotNet.ProjectModel.Graph;
 using Microsoft.DotNet.ProjectModel.Utilities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NuGet.Frameworks;
 using NuGet.Versioning;
 
 namespace Microsoft.DotNet.ProjectModel
@@ -453,7 +452,7 @@ namespace Microsoft.DotNet.ProjectModel
             var compilerOptions = GetCompilationOptions(frameworkValue, project) ??
                                   new CommonCompilerOptions();
 
-            var frameworkName = NuGetFramework.Parse(frameworkKey);
+            var frameworkName = FrameworkNameHelper.Parse(frameworkKey);
 
             // If it's not unsupported then keep it
             if (frameworkName.IsUnsupported)
@@ -464,7 +463,7 @@ namespace Microsoft.DotNet.ProjectModel
 
             // Add the target framework specific define
             var defines = new HashSet<string>(compilerOptions.Defines ?? Enumerable.Empty<string>());
-            var frameworkDefine = MakeDefaultTargetFrameworkDefine(frameworkName);
+            var frameworkDefine = FrameworkNameHelper.GenerateFrameworkNameDefine(frameworkName);
 
             if (!string.IsNullOrEmpty(frameworkDefine))
             {
@@ -573,34 +572,6 @@ namespace Microsoft.DotNet.ProjectModel
                 PreserveCompilationContext = rawOptions.Value<bool?>("preserveCompilationContext"),
                 OutputName = rawOptions.Value<string>("outputName")
             };
-        }
-
-        private static string MakeDefaultTargetFrameworkDefine(NuGetFramework targetFramework)
-        {
-            var shortName = targetFramework.GetTwoDigitShortFolderName();
-
-            if (targetFramework.IsPCL)
-            {
-                return null;
-            }
-
-            var candidateName = shortName.ToUpperInvariant();
-
-            // Replace '-', '.', and '+' in the candidate name with '_' because TFMs with profiles use those (like "net40-client")
-            // and we want them representable as defines (i.e. "NET40_CLIENT")
-            candidateName = candidateName.Replace('-', '_').Replace('+', '_').Replace('.', '_');
-
-            // We require the following from our Target Framework Define names
-            // Starts with A-Z or _
-            // Contains only A-Z, 0-9 and _
-            if (!string.IsNullOrEmpty(candidateName) &&
-                (char.IsLetter(candidateName[0]) || candidateName[0] == '_') &&
-                candidateName.All(c => Char.IsLetterOrDigit(c) || c == '_'))
-            {
-                return candidateName;
-            }
-
-            return null;
         }
 
         private static bool HasProjectFile(string path)

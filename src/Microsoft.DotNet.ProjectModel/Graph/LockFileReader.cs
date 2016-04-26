@@ -275,7 +275,7 @@ namespace Microsoft.DotNet.ProjectModel.Graph
         private ProjectFileDependencyGroup ReadProjectFileDependencyGroup(string property, JsonValue json)
         {
             return new ProjectFileDependencyGroup(
-                string.IsNullOrEmpty(property) ? null : NuGetFramework.Parse(property),
+            string.IsNullOrEmpty(property) ? null : FrameworkNameHelper.Parse(property),
                 ReadArray(json, ReadString));
         }
 

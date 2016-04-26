@@ -429,7 +429,7 @@ namespace Microsoft.DotNet.ProjectModel.Compilation
                     case 3:
                         analyzerRefs.Add(new AnalyzerReference(
                             assembly: assemblyPath,
-                            framework: NuGetFramework.Parse(specifiers[1]),
+                            framework: FrameworkNameHelper.Parse(specifiers[1]),
                             language: null,
                             runtimeIdentifier: null
                         ));
@@ -439,7 +439,7 @@ namespace Microsoft.DotNet.ProjectModel.Compilation
                     case 4:
                         analyzerRefs.Add(new AnalyzerReference(
                             assembly: assemblyPath,
-                            framework: NuGetFramework.Parse(specifiers[1]),
+                            framework: FrameworkNameHelper.Parse(specifiers[1]),
                             language: specifiers[2],
                             runtimeIdentifier: null
                         ));
@@ -449,7 +449,7 @@ namespace Microsoft.DotNet.ProjectModel.Compilation
                     case 5:
                         analyzerRefs.Add(new AnalyzerReference(
                             assembly: assemblyPath,
-                            framework: NuGetFramework.Parse(specifiers[1]),
+                            framework: FrameworkNameHelper.Parse(specifiers[1]),
                             language: specifiers[3],
                             runtimeIdentifier: specifiers[2]
                         ));

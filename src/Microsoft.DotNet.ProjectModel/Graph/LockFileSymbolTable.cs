@@ -17,7 +17,7 @@ namespace Microsoft.DotNet.ProjectModel.Graph
 
         public NuGetVersion GetVersion(string versionString) => _versionTable.GetOrAdd(versionString, (s) => NuGetVersion.Parse(s));
         public VersionRange GetVersionRange(string versionRangeString) => _versionRangeTable.GetOrAdd(versionRangeString, (s) => VersionRange.Parse(s));
-        public NuGetFramework GetFramework(string frameworkString) => _frameworksTable.GetOrAdd(frameworkString, (s) => NuGetFramework.Parse(s));
+        public NuGetFramework GetFramework(string frameworkString) => _frameworksTable.GetOrAdd(frameworkString, (s) => FrameworkNameHelper.Parse(s));
         public string GetString(string frameworkString) => _stringsTable.GetOrAdd(frameworkString, frameworkString);
     }
 }

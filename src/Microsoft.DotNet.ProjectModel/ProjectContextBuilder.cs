@@ -137,7 +137,7 @@ namespace Microsoft.DotNet.ProjectModel
                 var deduper = new HashSet<string>();
                 foreach (var target in LockFile.Targets)
                 {
-                    var id = $"{target.TargetFramework}/{target.RuntimeIdentifier}";
+                    var id = $"{FrameworkNameHelper.ToString(target.TargetFramework)}/{target.RuntimeIdentifier}";
                     if (deduper.Add(id))
                     {
                         var builder = new ProjectContextBuilder()
@@ -463,7 +463,7 @@ namespace Microsoft.DotNet.ProjectModel
                         }
                         else if (!libraries.TryGetValue(new LibraryKey(dependency.Name, LibraryType.ReferenceAssembly), out dependencyDescription))
                         {
-                            // a dependency which type is unspecified fails to match, then try to find a 
+                            // a dependency which type is unspecified fails to match, then try to find a
                             // reference assembly type dependency
                             dependencyDescription = UnresolvedDependencyProvider.GetDescription(dependency, TargetFramework);
                             libraries[key] = dependencyDescription;

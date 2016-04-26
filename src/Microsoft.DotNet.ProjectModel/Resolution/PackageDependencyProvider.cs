@@ -80,7 +80,7 @@ namespace Microsoft.DotNet.ProjectModel.Resolution
                     continue;
                 }
 
-                var assemblyTargetFramework = NuGetFramework.Parse(pathParts[1]);
+                var assemblyTargetFramework = FrameworkNameHelper.Parse(pathParts[1]);
 
                 if (!assemblyTargetFramework.IsPCL)
                 {

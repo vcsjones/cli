@@ -41,7 +41,7 @@ namespace Microsoft.DotNet.ProjectModel
             var compilationOutputPath = PathUtility.EnsureTrailingSlash(Path.Combine(resolvedBuildBasePath,
                 BinDirectoryName,
                 configuration,
-                framework.GetShortFolderName()));
+                FrameworkNameHelper.GetShortFolderName(framework)));
 
             string runtimeOutputPath = null;
             if (string.IsNullOrEmpty(outputPath))

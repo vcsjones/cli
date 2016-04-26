@@ -3,6 +3,7 @@
 
 using System;
 using System.Runtime.Versioning;
+using Microsoft.DotNet.ProjectModel;
 
 namespace NuGet.Frameworks
 {
@@ -11,7 +12,7 @@ namespace NuGet.Frameworks
         // HACK(anurse): NuGet.Frameworks turns "dnxcore50" into "dnxcore5" :(
         public static string GetTwoDigitShortFolderName(this NuGetFramework self)
         {
-            var original = self.GetShortFolderName();
+            var original = FrameworkNameHelper.GetShortFolderName(self);
             var index = 0;
             for (; index < original.Length; index++)
             {
