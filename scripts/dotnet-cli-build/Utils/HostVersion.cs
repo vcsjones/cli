@@ -40,8 +40,8 @@ namespace Microsoft.DotNet.Cli.Build
         //
         // Locked muxer for consumption in CLI.
         //
-        public bool IsLocked = false; // Set this variable to toggle muxer locking.
-        public string LockedHostFxrVersion => IsLocked ? "1.0.1-rc2-002468-00" : LatestHostFxrVersion;
-        public string LockedHostVersion => IsLocked ? "1.0.1-rc2-002468-00" : LatestHostVersion;
+        public bool IsLocked = true; // Set this variable to toggle muxer locking.
+        public string LockedHostFxrVersion => IsLocked ? "1.0.1-rc2-002668-00" : LatestHostFxrVersion;
+        public string LockedHostVersion => IsLocked ? "1.0.1-rc2-002668-00" : LatestHostVersion;
     }
 }
